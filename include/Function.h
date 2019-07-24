@@ -31,6 +31,8 @@ struct Function;
 #endif
 
 
+#include "Condition.h"
+#include "Ref.h"
 #include "Value.h"
 #include "Ptr.h"
 

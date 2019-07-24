@@ -50,8 +50,19 @@ int main(int argc, char **argv){
 		auto &vr_cnt = std::get<1>(args);
 
 		Value vr_sum(fn, 0, "sum");
-		//TODO
+		auto vr_arrend = vr_arr + vr_cnt;
+		for_each(fn, vr_arr, vr_arrend, [&](auto &vr_ele){
+			vr_sum += vr_ele;
+		});
 		ret(fn, vr_sum);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		int result = fnptr(array, cnt);
+		printf("result: %i\n", result);
+
+		asmrt.rt.release(fnptr);
 	}
 
 	delete[] array;

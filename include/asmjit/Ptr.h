@@ -10,9 +10,10 @@
 
 template<class T>
 struct Ptr<::asmjit::x86::Compiler,T>{
+	using F = ::asmjit::x86::Compiler;
 	using value_type = typename T::value_type;
 	using value_base_type = ValueBase<::asmjit::x86::Compiler>;
-	//using mem_type = Ref<T>;
+	using mem_type = Ref<F,T>;
 
 	static_assert(std::is_base_of_v<value_base_type,T>, "pointer type only of value wrappers");
 
@@ -32,7 +33,6 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	operator const ::asmjit::x86::Gp&() const { return reg; }
 	operator       ::asmjit::x86::Gp&()       { return reg; }
 
-#if 0
 	// dereference
 	mem_type operator*(){
 		switch(sizeof(value_type)){
@@ -69,7 +69,6 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 			case 8: return {cc, ::asmjit::x86::qword_ptr(reg, offset)};
 		}
 	}
-#endif
 
 	Ptr operator+(const value_base_type &value) const {
 		Ptr res(cc);
@@ -91,8 +90,8 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Ptr &operator--(){ cc.sub(reg, sizeof(value_type)); return *this; }
 
 	// comparisons
-	//Condition operator==(const Ptr &other) const { return {cc, reg, other.reg, Condition::ConditionFlag::e};  }
-	//Condition operator!=(const Ptr &other) const { return {cc, reg, other.reg, Condition::ConditionFlag::ne}; }
+	Condition<F> operator==(const Ptr &other) const { return {cc, reg, other.reg, ConditionFlag::e};  }
+	Condition<F> operator!=(const Ptr &other) const { return {cc, reg, other.reg, ConditionFlag::ne}; }
 };
 
 

@@ -16,6 +16,7 @@
 
 template<typename T>
 struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::Compiler> {
+	using F = ::asmjit::x86::Compiler;
 	using value_type = T;
 
 	static_assert(sizeof(T)==1 || sizeof(T)==2 || sizeof(T)==4 || sizeof(T)==8,
@@ -132,10 +133,10 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		}
 		return *this;
 	}
-	//Value &operator=(const Ref<Value> &other){
-	//	cc.mov(reg, other);
-	//	return *this;
-	//}
+	Value &operator=(const Ref<F,Value> &other){
+		cc.mov(reg, other);
+		return *this;
+	}
 
 	Value &operator<<=(const Value &other){
 		if constexpr(std::is_signed_v<T>){
@@ -247,23 +248,23 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 
 	Value &operator+=(const Value &other){      cc.add(reg, other); return *this; }
 	Value &operator+=(int constant){            cc.add(reg, ::asmjit::imm(constant)); return *this; }
-	//Value &operator+=(const Ref<Value> &other){ cc.add(reg, other); return *this; }
+	Value &operator+=(const Ref<F,Value> &other){ cc.add(reg, other); return *this; }
 
 	Value &operator-=(const Value &other){      cc.sub(reg, other); return *this; }
 	Value &operator-=(int constant){            cc.sub(reg, ::asmjit::imm(constant)); return *this; }
-	//Value &operator-=(const Ref<Value> &other){ cc.sub(reg, other); return *this; }
+	Value &operator-=(const Ref<F,Value> &other){ cc.sub(reg, other); return *this; }
 
 	Value &operator&=(const Value &other){      cc.and_(reg, other); return *this; }
 	Value &operator&=(int constant){            cc.and_(reg, ::asmjit::imm(constant)); return *this; }
-	//Value &operator&=(const Ref<Value> &other){ cc.and_(reg, other); return *this; }
+	Value &operator&=(const Ref<F,Value> &other){ cc.and_(reg, other); return *this; }
 
 	Value &operator|=(const Value &other){      cc.or_(reg, other); return *this; }
 	Value &operator|=(int constant){            cc.or_(reg, ::asmjit::imm(constant)); return *this; }
-	//Value &operator|=(const Ref<Value> &other){ cc.or_(reg, other); return *this; }
+	Value &operator|=(const Ref<F,Value> &other){ cc.or_(reg, other); return *this; }
 
 	Value &operator^=(const Value &other){      cc.xor_(reg, other); return *this; }
 	Value &operator^=(int constant){            cc.xor_(reg, ::asmjit::imm(constant)); return *this; }
-	//Value &operator^=(const Ref<Value> &other){ cc.xor_(reg, other); return *this; }
+	Value &operator^=(const Ref<F,Value> &other){ cc.xor_(reg, other); return *this; }
 
 	Value &operator~(){ cc.not_(reg); return *this; }
 
@@ -278,43 +279,41 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 
 
 	// comparisons
-	//Condition operator==(const Value &other) const { return {cc, reg, other.reg, Condition::ConditionFlag::e};  }
-	//Condition operator!=(const Value &other) const { return {cc, reg, other.reg, Condition::ConditionFlag::ne}; }
-	//Condition operator< (const Value &other) const { return {cc, reg, other.reg, less()};  }
-	//Condition operator<=(const Value &other) const { return {cc, reg, other.reg, less_equal()}; }
-	//Condition operator> (const Value &other) const { return {cc, reg, other.reg, greater()};  }
-	//Condition operator>=(const Value &other) const { return {cc, reg, other.reg, greater_equal()}; }
-	//Condition operator==(int constant) const { return {cc, reg, constant, Condition::ConditionFlag::e};  }
-	//Condition operator!=(int constant) const { return {cc, reg, constant, Condition::ConditionFlag::ne}; }
-	//Condition operator< (int constant) const { return {cc, reg, constant, less()};  }
-	//Condition operator<=(int constant) const { return {cc, reg, constant, less_equal()}; }
-	//Condition operator> (int constant) const { return {cc, reg, constant, greater()};  }
-	//Condition operator>=(int constant) const { return {cc, reg, constant, greater_equal()}; }
-	//Condition operator==(const Ref<Value> &other) const { return {cc, reg, other.mem, Condition::ConditionFlag::e};  }
-	//Condition operator!=(const Ref<Value> &other) const { return {cc, reg, other.mem, Condition::ConditionFlag::ne}; }
-	//Condition operator< (const Ref<Value> &other) const { return {cc, reg, other.mem, less()};  }
-	//Condition operator<=(const Ref<Value> &other) const { return {cc, reg, other.mem, less_equal()}; }
-	//Condition operator> (const Ref<Value> &other) const { return {cc, reg, other.mem, greater()};  }
-	//Condition operator>=(const Ref<Value> &other) const { return {cc, reg, other.mem, greater_equal()}; }
+	Condition<F> operator==(const Value &other) const { return {cc, reg, other.reg, ConditionFlag::e};  }
+	Condition<F> operator!=(const Value &other) const { return {cc, reg, other.reg, ConditionFlag::ne}; }
+	Condition<F> operator< (const Value &other) const { return {cc, reg, other.reg, less()};  }
+	Condition<F> operator<=(const Value &other) const { return {cc, reg, other.reg, less_equal()}; }
+	Condition<F> operator> (const Value &other) const { return {cc, reg, other.reg, greater()};  }
+	Condition<F> operator>=(const Value &other) const { return {cc, reg, other.reg, greater_equal()}; }
+	Condition<F> operator==(int constant) const { return {cc, reg, constant, ConditionFlag::e};  }
+	Condition<F> operator!=(int constant) const { return {cc, reg, constant, ConditionFlag::ne}; }
+	Condition<F> operator< (int constant) const { return {cc, reg, constant, less()};  }
+	Condition<F> operator<=(int constant) const { return {cc, reg, constant, less_equal()}; }
+	Condition<F> operator> (int constant) const { return {cc, reg, constant, greater()};  }
+	Condition<F> operator>=(int constant) const { return {cc, reg, constant, greater_equal()}; }
+	Condition<F> operator==(const Ref<F,Value> &other) const { return {cc, reg, other.mem, ConditionFlag::e};  }
+	Condition<F> operator!=(const Ref<F,Value> &other) const { return {cc, reg, other.mem, ConditionFlag::ne}; }
+	Condition<F> operator< (const Ref<F,Value> &other) const { return {cc, reg, other.mem, less()};  }
+	Condition<F> operator<=(const Ref<F,Value> &other) const { return {cc, reg, other.mem, less_equal()}; }
+	Condition<F> operator> (const Ref<F,Value> &other) const { return {cc, reg, other.mem, greater()};  }
+	Condition<F> operator>=(const Ref<F,Value> &other) const { return {cc, reg, other.mem, greater_equal()}; }
 
-#if 0
-	static inline constexpr Condition::ConditionFlag less(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::l;
-		else                              return Condition::ConditionFlag::b;
+	static inline constexpr ConditionFlag less(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::l;
+		else                              return ConditionFlag::b;
 	}
-	static inline constexpr Condition::ConditionFlag less_equal(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::le;
-		else                              return Condition::ConditionFlag::be;
+	static inline constexpr ConditionFlag less_equal(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::le;
+		else                              return ConditionFlag::be;
 	}
-	static inline constexpr Condition::ConditionFlag greater(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::g;
-		else                              return Condition::ConditionFlag::a;
+	static inline constexpr ConditionFlag greater(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::g;
+		else                              return ConditionFlag::a;
 	}
-	static inline constexpr Condition::ConditionFlag greater_equal(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::ge;
-		else                              return Condition::ConditionFlag::ae;
+	static inline constexpr ConditionFlag greater_equal(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::ge;
+		else                              return ConditionFlag::ae;
 	}
-#endif
 };
 
 // deduction guides
