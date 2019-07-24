@@ -1,0 +1,60 @@
+#include <cstdlib>
+#include <cstdio>
+
+#include "include/Function.h"
+#include "include/ControlFlow.h"
+
+
+int main(int argc, char **argv){
+	if(argc < 3){
+		puts("usage: ./prog divisor array_of_numbers\nexample: ./prog 2 24 32 86 42 23 16 4 8");
+		return -1;
+	}
+
+	int divisor = atoi(argv[1]);
+	size_t cnt = argc - 2;
+	int *array = new int[cnt];
+	for(int i=2; i<argc; ++i){
+		array[i-2] = atoi(argv[i]);
+	}
+
+
+	// init JIT backends
+	runtimeAsmjit asmrt;
+
+	{
+		using func_type = int (*)();
+		Function<runtimeAsmjit,func_type> fn(&asmrt);
+		Value vr_val3(fn, 0, "val");
+		Value vr_val4(fn.cc, 0, "val");
+		Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
+		vr_val = 0;
+		auto vr_val2 = fn.getValue<int>("val");
+		vr_val2 = 0;
+		ret(fn, vr_val);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		int result = fnptr();
+		printf("result: %i\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+
+	{
+		using func_type = int (*)(const int*,size_t);
+		Function<runtimeAsmjit,func_type> fn(&asmrt);
+		auto args = fn.getArguments("arr", "cnt");
+		auto &vr_arr = std::get<0>(args);
+		auto &vr_cnt = std::get<1>(args);
+
+		Value vr_sum(fn, 0, "sum");
+		//TODO
+		ret(fn, vr_sum);
+	}
+
+	delete[] array;
+
+	return 0;
+}
