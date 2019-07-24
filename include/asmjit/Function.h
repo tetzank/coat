@@ -28,6 +28,7 @@ struct Function<runtimeAsmjit,R(*)(Args...)>{
 
 		cc.addFunc(::asmjit::FuncSignatureT<R,Args...>());
 	}
+	Function(const Function &other) = delete;
 
 
 	template<typename ...Names>

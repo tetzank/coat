@@ -22,6 +22,25 @@ inline void ret(Function<runtimeAsmjit,FnPtr> &ctx, VReg &reg){
 }
 
 
+
+template<typename Fn>
+void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&body){
+	::asmjit::Label l_loop = cc.newLabel();
+	::asmjit::Label l_exit = cc.newLabel();
+
+	// check if even one iteration
+	jump(cc, !cond, l_exit); // if not jump over
+
+	// loop
+	cc.bind(l_loop);
+		body();
+	jump(cc, cond, l_loop);
+
+	// label after loop body
+	cc.bind(l_exit);
+}
+
+
 template<class Ptr, typename Fn>
 void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
 	::asmjit::Label l_loop = cc.newLabel();
