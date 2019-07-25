@@ -1,9 +1,6 @@
 #ifndef COAT_RUNTIMELLVMJIT_H_
 #define COAT_RUNTIMELLVMJIT_H_
 
-// use new code by default for now
-#define LLVM6 0
-
 
 #include <cstdio>
 #include <fstream>
@@ -25,9 +22,8 @@
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/ExecutionEngine/Orc/LambdaResolver.h>
 #include <llvm/IR/Mangler.h>
-#if !LLVM6
+
 #include <llvm/ExecutionEngine/JITEventListener.h>
-#endif
 
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
@@ -55,16 +51,10 @@ private:
 	llvm::orc::RTDyldObjectLinkingLayer ObjectLayer;
 	llvm::orc::IRCompileLayer<decltype(ObjectLayer), llvm::orc::SimpleCompiler> CompileLayer;
 
-#if LLVM6
-	using ModuleHandle = decltype(CompileLayer)::ModuleHandleT;
-	//TODO: means probably that we can only for one query, fine for now, extend later
-	ModuleHandle h;
-#else
 	llvm::orc::ExecutionSession ES;
 	std::shared_ptr<llvm::orc::SymbolResolver> resolver;
 	std::vector<llvm::orc::VModuleKey> moduleKeys;
 	llvm::JITEventListener *gdbEventListener;
-#endif
 
 	// optimization level
 	int optLevel=3;
@@ -78,11 +68,6 @@ public:
 	}
 
 	runtimellvmjit()
-#if LLVM6
-		: tm(llvm::EngineBuilder().selectTarget()), dl(tm->createDataLayout()),
-			ObjectLayer([]() { return std::make_shared<llvm::SectionMemoryManager>(); }),
-		CompileLayer(ObjectLayer, llvm::orc::SimpleCompiler(*tm))
-#else
 		: tm(llvm::EngineBuilder().selectTarget())
 		, dl(tm->createDataLayout())
 		, ObjectLayer(ES,
@@ -118,13 +103,10 @@ public:
 				cantFail(std::move(err), "lookupFlags failed");
 			}
 		  ))
-#endif
 	{
 		llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
 
-#if !LLVM6
 		gdbEventListener = llvm::JITEventListener::createGDBRegistrationListener();
-#endif
 	}
 
 	void reset(){
@@ -231,45 +213,15 @@ public:
 	}
 
 	void finalize(){
-#if LLVM6
-		// Build our symbol resolver:
-		// Lambda 1: Look back into the JIT itself to find symbols that are part of
-		//           the same "logical dylib".
-		// Lambda 2: Search for external symbols in the host process.
-		auto Resolver = llvm::orc::createLambdaResolver(
-			[&](const std::string &Name) {
-				if(auto Sym = CompileLayer.findSymbol(Name, false)){
-					return Sym;
-				}
-				return llvm::JITSymbol(nullptr);
-			},
-			[](const std::string &Name) {
-				if(auto SymAddr = llvm::RTDyldMemoryManager::getSymbolAddressInProcess(Name)){
-					return llvm::JITSymbol(SymAddr, llvm::JITSymbolFlags::Exported);
-				}
-				return llvm::JITSymbol(nullptr);
-			}
-		);
-
-		// Add the set to the JIT with the resolver we created above and a newly
-		// created SectionMemoryManager.
-		//ATTENTION: moves module, not usable afterwards, create new with createFunction
-		h = cantFail(CompileLayer.addModule(std::move(module), std::move(Resolver)));
-#else
 		auto K = ES.allocateVModule();
 		cantFail(CompileLayer.addModule(K, std::move(module)));
 		moduleKeys.push_back(K);
-#endif
 	}
 	void free(){
-#if LLVM6
-		cantFail(CompileLayer.removeModule(h));
-#else
 		for(auto K : moduleKeys){
 			cantFail(CompileLayer.removeModule(K));
 		}
 		moduleKeys.clear();
-#endif
 	}
 
 	llvm::JITSymbol findSymbol(const std::string name) {
