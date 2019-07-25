@@ -13,14 +13,6 @@
 // holds operands and comparison type
 // cannot emit instructions directly as comparison emits multiple instructions at different locations
 // while-loop: if(cond) do{ ... }while(cond);
-
-enum class ConditionFlag {
-	e, ne,
-	//z, nz,
-	l, le, b, be,
-	g, ge, a, ae,
-};
-
 template<>
 struct Condition<::asmjit::x86::Compiler> {
 	::asmjit::x86::Compiler &cc; //FIXME: pointer stored in every value type

@@ -10,5 +10,9 @@ struct Ptr;
 #  include "asmjit/Ptr.h"
 #endif
 
+#ifdef ENABLE_LLVMJIT
+#  include "llvmjit/Ptr.h"
+#endif
+
 
 #endif

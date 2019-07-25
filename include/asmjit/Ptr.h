@@ -12,7 +12,7 @@ template<class T>
 struct Ptr<::asmjit::x86::Compiler,T>{
 	using F = ::asmjit::x86::Compiler;
 	using value_type = typename T::value_type;
-	using value_base_type = ValueBase<::asmjit::x86::Compiler>;
+	using value_base_type = ValueBase<F>;
 	using mem_type = Ref<F,T>;
 
 	static_assert(std::is_base_of_v<value_base_type,T>, "pointer type only of value wrappers");

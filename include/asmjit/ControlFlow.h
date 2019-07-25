@@ -22,7 +22,6 @@ inline void ret(Function<runtimeAsmjit,FnPtr> &ctx, VReg &reg){
 }
 
 
-
 template<typename Fn>
 void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&body){
 	::asmjit::Label l_loop = cc.newLabel();

@@ -95,11 +95,11 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 
 	Value &operator+=(const Value &other){ store( builder.CreateAdd(load(), other.load()) ); return *this; }
 	Value &operator+=(int constant){ store( builder.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
-	//Value &operator+=(const Ref<Value> &other){ store( builder.CreateAdd(load(), other.load()) ); return *this; }
+	Value &operator+=(const Ref<F,Value> &other){ store( builder.CreateAdd(load(), other.load()) ); return *this; }
 
 	Value &operator-=(const Value &other){ store( builder.CreateSub(load(), other.load()) ); return *this; }
 	Value &operator-=(int constant){ store( builder.CreateSub(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
-	//Value &operator-=(const Ref<Value> &other){ store( builder.CreateSub(load(), other.load()) ); return *this; }
+	Value &operator-=(const Ref<F,Value> &other){ store( builder.CreateSub(load(), other.load()) ); return *this; }
 
 	Value &operator&=(const Value &other){          store( builder.CreateAnd(load(), other.load()) ); return *this; }
 	Value &operator&=(int constant){               store( builder.CreateAnd(load(), constant) ); return *this; }
@@ -115,45 +115,43 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 
 	//Value &operator~(){ cc.not_(reg); return *this; }
 
-#if 0
 	//TODO: operations
 	// comparisons
-	Condition operator==(const Value &other) const { return {builder, memreg, other.memreg, Condition::ConditionFlag::e};  }
-	Condition operator!=(const Value &other) const { return {builder, memreg, other.memreg, Condition::ConditionFlag::ne}; }
-	Condition operator< (const Value &other) const { return {builder, memreg, other.memreg, less()};  }
-	Condition operator<=(const Value &other) const { return {builder, memreg, other.memreg, less_equal()}; }
-	Condition operator> (const Value &other) const { return {builder, memreg, other.memreg, greater()};  }
-	Condition operator>=(const Value &other) const { return {builder, memreg, other.memreg, greater_equal()}; }
-	Condition operator==(int constant) const { return {builder, memreg, constant, Condition::ConditionFlag::e};  }
-	Condition operator!=(int constant) const { return {builder, memreg, constant, Condition::ConditionFlag::ne}; }
-	Condition operator< (int constant) const { return {builder, memreg, constant, less()};  }
-	Condition operator<=(int constant) const { return {builder, memreg, constant, less_equal()}; }
-	Condition operator> (int constant) const { return {builder, memreg, constant, greater()};  }
-	Condition operator>=(int constant) const { return {builder, memreg, constant, greater_equal()}; }
-	//Condition operator==(const Ref<Value> &other) const { return {builder, memreg, other.mem, Condition::ConditionFlag::e};  }
-	//Condition operator!=(const Ref<Value> &other) const { return {builder, memreg, other.mem, Condition::ConditionFlag::ne}; }
-	//Condition operator< (const Ref<Value> &other) const { return {builder, memreg, other.mem, less()};  }
-	//Condition operator<=(const Ref<Value> &other) const { return {builder, memreg, other.mem, less_equal()}; }
-	//Condition operator> (const Ref<Value> &other) const { return {builder, memreg, other.mem, greater()};  }
-	//Condition operator>=(const Ref<Value> &other) const { return {builder, memreg, other.mem, greater_equal()}; }
+	Condition<F> operator==(const Value &other) const { return {builder, memreg, other.memreg, ConditionFlag::e};  }
+	Condition<F> operator!=(const Value &other) const { return {builder, memreg, other.memreg, ConditionFlag::ne}; }
+	Condition<F> operator< (const Value &other) const { return {builder, memreg, other.memreg, less()};  }
+	Condition<F> operator<=(const Value &other) const { return {builder, memreg, other.memreg, less_equal()}; }
+	Condition<F> operator> (const Value &other) const { return {builder, memreg, other.memreg, greater()};  }
+	Condition<F> operator>=(const Value &other) const { return {builder, memreg, other.memreg, greater_equal()}; }
+	Condition<F> operator==(int constant) const { return {builder, memreg, constant, ConditionFlag::e};  }
+	Condition<F> operator!=(int constant) const { return {builder, memreg, constant, ConditionFlag::ne}; }
+	Condition<F> operator< (int constant) const { return {builder, memreg, constant, less()};  }
+	Condition<F> operator<=(int constant) const { return {builder, memreg, constant, less_equal()}; }
+	Condition<F> operator> (int constant) const { return {builder, memreg, constant, greater()};  }
+	Condition<F> operator>=(int constant) const { return {builder, memreg, constant, greater_equal()}; }
+	//Condition<F> operator==(const Ref<Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::e};  }
+	//Condition<F> operator!=(const Ref<Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::ne}; }
+	//Condition<F> operator< (const Ref<Value> &other) const { return {builder, memreg, other.mem, less()};  }
+	//Condition<F> operator<=(const Ref<Value> &other) const { return {builder, memreg, other.mem, less_equal()}; }
+	//Condition<F> operator> (const Ref<Value> &other) const { return {builder, memreg, other.mem, greater()};  }
+	//Condition<F> operator>=(const Ref<Value> &other) const { return {builder, memreg, other.mem, greater_equal()}; }
 
-	static inline constexpr Condition::ConditionFlag less(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::l;
-		else                              return Condition::ConditionFlag::b;
+	static inline constexpr ConditionFlag less(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::l;
+		else                              return ConditionFlag::b;
 	}
-	static inline constexpr Condition::ConditionFlag less_equal(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::le;
-		else                              return Condition::ConditionFlag::be;
+	static inline constexpr ConditionFlag less_equal(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::le;
+		else                              return ConditionFlag::be;
 	}
-	static inline constexpr Condition::ConditionFlag greater(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::g;
-		else                              return Condition::ConditionFlag::a;
+	static inline constexpr ConditionFlag greater(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::g;
+		else                              return ConditionFlag::a;
 	}
-	static inline constexpr Condition::ConditionFlag greater_equal(){
-		if constexpr(std::is_signed_v<T>) return Condition::ConditionFlag::ge;
-		else                              return Condition::ConditionFlag::ae;
+	static inline constexpr ConditionFlag greater_equal(){
+		if constexpr(std::is_signed_v<T>) return ConditionFlag::ge;
+		else                              return ConditionFlag::ae;
 	}
-#endif
 };
 
 // deduction guides

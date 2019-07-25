@@ -91,8 +91,7 @@ int main(int argc, char **argv){
 		// execute generated function
 		int result = fnptr();
 		printf("initialization test: llvmjit; result: %i\n", result);
-
-		asmrt.rt.release(fnptr);
+		//FIXME: free function
 	}
 
 	{
@@ -104,10 +103,23 @@ int main(int argc, char **argv){
 		func_type fnptr = fn.finalize(&asmrt);
 		// execute generated function
 		int result = fnptr(array, cnt);
-		printf("result with for_each: %i\n", result);
+		printf("result with for_each and  asmjit: %i\n", result);
 
 		asmrt.rt.release(fnptr);
 	}
+	{
+		using func_type = int (*)(const int*,size_t);
+		Function<runtimellvmjit,func_type> fn(llvmrt);
+		assemble_sum_foreach(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr(array, cnt);
+		printf("result with for_each and llvmjit: %i\n", result);
+		//FIXME: free function
+	}
+
 	{
 		using func_type = int (*)(const int*,size_t);
 		Function<runtimeAsmjit,func_type> fn(&asmrt);
@@ -117,9 +129,21 @@ int main(int argc, char **argv){
 		func_type fnptr = fn.finalize(&asmrt);
 		// execute generated function
 		int result = fnptr(array, cnt);
-		printf("result with loop_while: %i\n", result);
+		printf("result with loop_while and  asmjit: %i\n", result);
 
 		asmrt.rt.release(fnptr);
+	}
+	{
+		using func_type = int (*)(const int*,size_t);
+		Function<runtimellvmjit,func_type> fn(llvmrt);
+		assemble_sum_counter(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr(array, cnt);
+		printf("result with loop_while and llvmjit: %i\n", result);
+		//FIXME: free function
 	}
 
 	delete[] array;

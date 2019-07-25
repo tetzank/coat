@@ -10,5 +10,9 @@ struct Ref;
 #  include "asmjit/Ref.h"
 #endif
 
+#ifdef ENABLE_LLVMJIT
+#  include "llvmjit/Ref.h"
+#endif
+
 
 #endif
