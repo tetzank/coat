@@ -59,6 +59,28 @@ void assemble_condsum_loop(Fn &fn){
 
 
 
+struct triple {
+#define MEMBERS(x) \
+	x(uint32_t, first) \
+	x(uint16_t, second) \
+	x(uint64_t, third)
+
+DECLARE(MEMBERS)
+#undef MEMBERS
+};
+
+template<class Fn>
+void assemble_getStructElement(Fn &fn){
+	auto args = fn.getArguments("triple");
+	auto &vr_triple = std::get<0>(args);
+
+	auto vr_m = vr_triple.template get_reference<triple::member_second>();
+	auto vr_ret = fn.template getValue<uint32_t>();
+	vr_ret.widen(vr_m);
+	coat::ret(fn, vr_ret);
+}
+
+
 int main(int argc, char **argv){
 	if(argc < 3){
 		puts("usage: ./prog divisor array_of_numbers\nexample: ./prog 2 24 32 86 42 23 16 4 8");
@@ -189,6 +211,33 @@ int main(int argc, char **argv){
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with loop_while and llvmjit: %i\n", result);
+		//FIXME: free function
+	}
+
+	triple t{23, 42, 88};
+	{
+		using func_type = uint32_t (*)(triple*);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		assemble_getStructElement(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		int result = fnptr(&t);
+		printf("getStructElement  asmjit: %i\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+	{
+		using func_type = uint32_t (*)(triple*);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+		assemble_getStructElement(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr(&t);
+		printf("getStructElement llvmjit: %i\n", result);
 		//FIXME: free function
 	}
 

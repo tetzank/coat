@@ -54,7 +54,11 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 
 	template<class O>
 	Value &widen(const O &other){
-		static_assert(sizeof(T) > sizeof(typename O::value_type), "widening conversion called on wrong types");
+		if constexpr(std::is_base_of_v<ValueBase,O>){
+			static_assert(sizeof(T) > sizeof(typename O::value_type), "widening conversion called on wrong types");
+		}else{
+			static_assert(sizeof(T) > sizeof(typename O::inner_type::value_type), "widening conversion called on wrong types");
+		}
 		if constexpr(std::is_signed_v<T>){
 			store( builder.CreateSExt(other.load(), type()) );
 		}else{

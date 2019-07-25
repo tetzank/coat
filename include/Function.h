@@ -109,5 +109,6 @@ struct Function;
 #include "Ref.h"
 #include "Value.h"
 #include "Ptr.h"
+#include "Struct.h"
 
 #endif
