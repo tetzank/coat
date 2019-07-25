@@ -55,12 +55,13 @@ int main(int argc, char **argv){
 
 	// init JIT backends
 	runtimeAsmjit asmrt;
+	runtimellvmjit::initTarget();
+	runtimellvmjit llvmrt;
 
 	{
 		using func_type = int (*)();
 		Function<runtimeAsmjit,func_type> fn(&asmrt);
 		Value vr_val3(fn, 0, "val");
-		Value vr_val4(fn.cc, 0, "val");
 		Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
 		vr_val = 0;
 		auto vr_val2 = fn.getValue<int>("val");
@@ -71,7 +72,25 @@ int main(int argc, char **argv){
 		func_type fnptr = fn.finalize(&asmrt);
 		// execute generated function
 		int result = fnptr();
-		printf("result: %i\n", result);
+		printf("initialization test:  asmjit; result: %i\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+	{
+		using func_type = int (*)();
+		Function<runtimellvmjit,func_type> fn(llvmrt);
+		Value vr_val3(fn, 0, "val");
+		Value<::llvm::IRBuilder<>,int> vr_val(fn, "val");
+		vr_val = 0;
+		auto vr_val2 = fn.getValue<int>("val");
+		vr_val2 = 0;
+		ret(fn, vr_val);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr();
+		printf("initialization test: llvmjit; result: %i\n", result);
 
 		asmrt.rt.release(fnptr);
 	}

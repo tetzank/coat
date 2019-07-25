@@ -13,5 +13,10 @@ struct Value;
 #  include "asmjit/Value.h"
 #endif
 
+#ifdef ENABLE_LLVMJIT
+#  include "llvmjit/ValueBase.h"
+#  include "llvmjit/Value.h"
+#endif
+
 
 #endif

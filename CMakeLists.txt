@@ -27,7 +27,20 @@ find_library(ASMJIT_LIBRARIES
 )
 include_directories(${ASMJIT_INCLUDE_DIR})
 
+# find llvm, quick&dirty
+find_path(LLVM_INCLUDE_DIR
+	llvm/IR/IRBuilder.h
+	HINTS external/llvm/llvm/install ENV LLVM_ROOT
+	PATH_SUFFIXES include
+)
+find_library(LLVM_LIBRARIES
+	LLVM-7.1
+	HINTS external/llvm/llvm/install ENV LLVM_ROOT
+	PATH_SUFFIXES lib build/lib
+)
+include_directories(${LLVM_INCLUDE_DIR})
+
 
 add_executable(test test.cpp)
-target_compile_definitions(test PRIVATE "ENABLE_ASMJIT")
-target_link_libraries(test ${ASMJIT_LIBRARIES})
+target_compile_definitions(test PRIVATE "ENABLE_ASMJIT" PRIVATE "ENABLE_LLVMJIT")
+target_link_libraries(test ${ASMJIT_LIBRARIES} ${LLVM_LIBRARIES})
