@@ -320,12 +320,5 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 template<typename T> Value(::asmjit::x86::Compiler&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 template<typename FnPtr, typename T> Value(Function<runtimeAsmjit,FnPtr>&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 
-#if 0
-template<typename T>
-using reg_type = std::conditional_t<std::is_pointer_v<T>,
-						Ptr<Value<std::remove_cv_t<std::remove_pointer_t<T>>>>,
-						Value<std::remove_cv_t<T>>>;
-#endif
-
 
 #endif

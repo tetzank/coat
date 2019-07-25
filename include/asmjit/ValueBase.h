@@ -18,7 +18,7 @@ struct ValueBase<::asmjit::x86::Compiler> {
 	operator       ::asmjit::x86::Gp&()       { return reg; }
 
 #if 0
-	ValueBase &operator=(const Condition &cond){
+	ValueBase &operator=(const Condition<::asmjit::x86::Compiler> &cond){
 		cond.compare();
 		cond.setbyte(reg);
 		return *this;

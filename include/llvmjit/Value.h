@@ -129,12 +129,12 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Condition<F> operator<=(int constant) const { return {builder, memreg, constant, less_equal()}; }
 	Condition<F> operator> (int constant) const { return {builder, memreg, constant, greater()};  }
 	Condition<F> operator>=(int constant) const { return {builder, memreg, constant, greater_equal()}; }
-	//Condition<F> operator==(const Ref<Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::e};  }
-	//Condition<F> operator!=(const Ref<Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::ne}; }
-	//Condition<F> operator< (const Ref<Value> &other) const { return {builder, memreg, other.mem, less()};  }
-	//Condition<F> operator<=(const Ref<Value> &other) const { return {builder, memreg, other.mem, less_equal()}; }
-	//Condition<F> operator> (const Ref<Value> &other) const { return {builder, memreg, other.mem, greater()};  }
-	//Condition<F> operator>=(const Ref<Value> &other) const { return {builder, memreg, other.mem, greater_equal()}; }
+	Condition<F> operator==(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::e};  }
+	Condition<F> operator!=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::ne}; }
+	Condition<F> operator< (const Ref<F,Value> &other) const { return {builder, memreg, other.mem, less()};  }
+	Condition<F> operator<=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, less_equal()}; }
+	Condition<F> operator> (const Ref<F,Value> &other) const { return {builder, memreg, other.mem, greater()};  }
+	Condition<F> operator>=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, greater_equal()}; }
 
 	static inline constexpr ConditionFlag less(){
 		if constexpr(std::is_signed_v<T>) return ConditionFlag::l;
@@ -157,71 +157,6 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 // deduction guides
 template<typename T> Value(::llvm::IRBuilder<>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
 template<typename FnPtr, typename T> Value(Function<runtimellvmjit,FnPtr>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
-
-
-#if 0
-template<typename T>
-inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx);
-
-template<class Tuple, std::size_t... I>
-inline llvm::StructType *getLLVMStructTypeImpl(llvm::LLVMContext &ctx, std::index_sequence<I...>){
-	return llvm::StructType::get(
-		getLLVMType<std::tuple_element_t<I, Tuple>>(ctx)...
-	);
-}
-template<typename T>
-inline llvm::StructType *getLLVMStructType(llvm::LLVMContext &ctx){
-	constexpr size_t N = std::tuple_size_v<typename T::types>;
-	return getLLVMStructTypeImpl<typename T::types>(ctx, std::make_index_sequence<N-1>{});
-}
-
-
-//TODO: a static member function in Value<T>, Ptr<T>, VStruct<T> would be better
-//      the ::type() is there already, but cannot be static
-template<typename T>
-inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
-	if constexpr(std::is_pointer_v<T>){
-		using base_type = std::remove_cv_t<std::remove_pointer_t<T>>;
-		if constexpr(std::is_integral_v<base_type>){
-			if constexpr(std::is_same_v<base_type,short> || std::is_same_v<base_type,unsigned short>){
-				return llvm::Type::getInt16PtrTy(ctx);
-			}else if constexpr(std::is_same_v<base_type,int> || std::is_same_v<base_type,unsigned>){
-				return llvm::Type::getInt32PtrTy(ctx);
-			}else if constexpr(std::is_same_v<base_type,long> || std::is_same_v<base_type,unsigned long>){
-				return llvm::Type::getInt64PtrTy(ctx);
-			}else{
-				static_assert(should_not_be_reached<T>, "type not supported");
-			}
-		}else{
-			return llvm::PointerType::get(getLLVMStructType<base_type>(ctx), 0);
-		}
-	}else{
-		if constexpr(std::is_same_v<T,void>){
-			return llvm::Type::getVoidTy(ctx);
-		}else if constexpr(std::is_same_v<T,short> || std::is_same_v<T,unsigned short>){
-			return llvm::Type::getInt16Ty(ctx);
-		}else if constexpr(std::is_same_v<T,int> || std::is_same_v<T,unsigned>){
-			return llvm::Type::getInt32Ty(ctx);
-		}else if constexpr(std::is_same_v<T,long> || std::is_same_v<T,unsigned long>){
-			return llvm::Type::getInt64Ty(ctx);
-		}else{
-			//HACK: assumes that this is a structure
-			return getLLVMStructType<T>(ctx);
-			//static_assert(should_not_be_reached<T>, "type not supported");
-		}
-	}
-	//return nullptr;
-	__builtin_trap(); // must not be reached, crashes if it still is
-}
-#endif
-
-#if 0
-//TODO: move to common header file as it is the same in both backends
-template<typename T>
-using reg_type = std::conditional_t<std::is_pointer_v<T>,
-						Ptr<Value<std::remove_cv_t<std::remove_pointer_t<T>>>>,
-						Value<std::remove_cv_t<T>>>;
-#endif
 
 
 #endif
