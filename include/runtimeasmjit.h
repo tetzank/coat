@@ -1,8 +1,10 @@
-#ifndef RUNTIMEASMJIT_HPP_
-#define RUNTIMEASMJIT_HPP_
+#ifndef COAT_RUNTIMEASMJIT_HPP_
+#define COAT_RUNTIMEASMJIT_HPP_
 
 #include <asmjit/asmjit.h>
 
+
+namespace coat {
 
 class MyErrorHandler : public asmjit::ErrorHandler{
 public:
@@ -26,5 +28,7 @@ struct runtimeAsmjit{
 	}
 #endif
 };
+
+} // namespace
 
 #endif

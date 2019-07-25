@@ -1,9 +1,10 @@
-#ifndef ASMJIT_REF_H_
-#define ASMJIT_REF_H_
+#ifndef COAT_ASMJIT_REF_H_
+#define COAT_ASMJIT_REF_H_
 
 #include <asmjit/asmjit.h>
 
 
+namespace coat {
 
 //FIXME: looks like ::asmjit::x86::Mem is copied around quite often during construction
 template<class T>
@@ -67,5 +68,6 @@ struct Ref<::asmjit::x86::Compiler,T> {
 	Condition<F> operator>=(const Ref &other) const { T tmp(cc, "tmp"); tmp = *this; return tmp>=other; }
 };
 
+} // namespace
 
 #endif

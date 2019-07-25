@@ -1,10 +1,12 @@
-#ifndef ASMJIT_VALUEBASE_H_
-#define ASMJIT_VALUEBASE_H_
+#ifndef COAT_ASMJIT_VALUEBASE_H_
+#define COAT_ASMJIT_VALUEBASE_H_
 
 #include <asmjit/asmjit.h>
 
 //#include "Condition.h"
 
+
+namespace coat {
 
 template<>
 struct ValueBase<::asmjit::x86::Compiler> {
@@ -31,5 +33,7 @@ struct ValueBase<::asmjit::x86::Compiler> {
 	// pre-decrement
 	ValueBase &operator--(){ cc.dec(reg); return *this; }
 };
+
+} // namespace
 
 #endif

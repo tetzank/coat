@@ -1,11 +1,12 @@
-#ifndef ASMJIT_CONDITION_H_
-#define ASMJIT_CONDITION_H_
+#ifndef COAT_ASMJIT_CONDITION_H_
+#define COAT_ASMJIT_CONDITION_H_
 
 #include <variant>
 
 #include <asmjit/asmjit.h>
 
 
+namespace coat {
 
 //TODO: combinations of conditions not possible, e.g. "i<j && r<s"
 //      really needs expressiont tree in the end
@@ -83,5 +84,6 @@ struct Condition<::asmjit::x86::Compiler> {
 	}
 };
 
+} // namespace
 
 #endif

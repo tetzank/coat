@@ -1,5 +1,5 @@
-#ifndef RUNTIMELLVMJIT_H_
-#define RUNTIMELLVMJIT_H_
+#ifndef COAT_RUNTIMELLVMJIT_H_
+#define COAT_RUNTIMELLVMJIT_H_
 
 // use new code by default for now
 #define LLVM6 0
@@ -37,6 +37,8 @@
 
 #include <llvm/IR/Verifier.h>
 
+
+namespace coat {
 
 class runtimellvmjit {
 public:
@@ -298,5 +300,7 @@ public:
 		of << os.str();
 	}
 };
+
+} // namespace
 
 #endif

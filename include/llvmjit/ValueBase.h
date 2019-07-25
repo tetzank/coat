@@ -1,8 +1,10 @@
-#ifndef LLVMJIT_VALUEBASE_H_
-#define LLVMJIT_VALUEBASE_H_
+#ifndef COAT_LLVMJIT_VALUEBASE_H_
+#define COAT_LLVMJIT_VALUEBASE_H_
 
 #include <llvm/IR/IRBuilder.h>
 
+
+namespace coat {
 
 template<>
 struct ValueBase<llvm::IRBuilder<>> {
@@ -25,5 +27,7 @@ struct ValueBase<llvm::IRBuilder<>> {
 	// pre-decrement
 	ValueBase &operator--(){ store( builder.CreateSub(load(), llvm::ConstantInt::get(type(), 1), "dec") ); return *this; }
 };
+
+} // namespace
 
 #endif

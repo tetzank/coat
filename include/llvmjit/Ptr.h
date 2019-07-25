@@ -1,9 +1,11 @@
-#ifndef LLVMJIT_PTR_H_
-#define LLVMJIT_PTR_H_
+#ifndef COAT_LLVMJIT_PTR_H_
+#define COAT_LLVMJIT_PTR_H_
 
 #include "ValueBase.h"
 //#include "Ref.h"
 
+
+namespace coat {
 
 template<class T>
 struct Ptr<::llvm::IRBuilder<>,T> {
@@ -86,5 +88,6 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	Condition<F> operator!=(const Ptr &other) const { return {builder, memreg, other.memreg, ConditionFlag::ne}; }
 };
 
+} // namespace
 
 #endif

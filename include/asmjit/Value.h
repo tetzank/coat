@@ -1,5 +1,5 @@
-#ifndef ASMJIT_VALUE_H_
-#define ASMJIT_VALUE_H_
+#ifndef COAT_ASMJIT_VALUE_H_
+#define COAT_ASMJIT_VALUE_H_
 
 
 #include <type_traits>
@@ -13,6 +13,7 @@
 //#include "Ptr.h"
 
 
+namespace coat {
 
 template<typename T>
 struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::Compiler> {
@@ -320,5 +321,6 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 template<typename T> Value(::asmjit::x86::Compiler&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 template<typename FnPtr, typename T> Value(Function<runtimeAsmjit,FnPtr>&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 
+} // namespace
 
 #endif

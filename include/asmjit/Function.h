@@ -1,10 +1,11 @@
-#ifndef ASMJIT_FUNCTION_H_
-#define ASMJIT_FUNCTION_H_
+#ifndef COAT_ASMJIT_FUNCTION_H_
+#define COAT_ASMJIT_FUNCTION_H_
 
 
 #include "../runtimeasmjit.h"
 
 
+namespace coat {
 
 template<typename R, typename ...Args>
 struct Function<runtimeAsmjit,R(*)(Args...)>{
@@ -82,5 +83,7 @@ struct Function<runtimeAsmjit,R(*)(Args...)>{
 	operator const ::asmjit::x86::Compiler&() const { return cc; }
 	operator       ::asmjit::x86::Compiler&()       { return cc; }
 };
+
+} // namespace
 
 #endif

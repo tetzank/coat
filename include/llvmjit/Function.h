@@ -1,8 +1,10 @@
-#ifndef LLVMJIT_FUNCTION_H_
-#define LLVMJIT_FUNCTION_H_
+#ifndef COAT_LLVMJIT_FUNCTION_H_
+#define COAT_LLVMJIT_FUNCTION_H_
 
 #include "../runtimellvmjit.h"
 
+
+namespace coat {
 
 template<typename R, typename ...Args>
 struct Function<runtimellvmjit,R(*)(Args...)>{
@@ -60,5 +62,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	operator const llvm::IRBuilder<>&() const { return builder; }
 	operator       llvm::IRBuilder<>&()       { return builder; }
 };
+
+} // namespace
 
 #endif

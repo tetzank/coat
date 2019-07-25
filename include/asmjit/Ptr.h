@@ -1,5 +1,5 @@
-#ifndef ASMJIT_PTR_H_
-#define ASMJIT_PTR_H_
+#ifndef COAT_ASMJIT_PTR_H_
+#define COAT_ASMJIT_PTR_H_
 
 #include "ValueBase.h"
 //#include "Ref.h"
@@ -7,6 +7,7 @@
 #include "../constexpr_helper.h"
 
 
+namespace coat {
 
 template<class T>
 struct Ptr<::asmjit::x86::Compiler,T>{
@@ -94,5 +95,6 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Condition<F> operator!=(const Ptr &other) const { return {cc, reg, other.reg, ConditionFlag::ne}; }
 };
 
+} // namespace
 
 #endif

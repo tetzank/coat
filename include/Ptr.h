@@ -1,10 +1,12 @@
-#ifndef PTR_H_
-#define PTR_H_
+#ifndef COAT_PTR_H_
+#define COAT_PTR_H_
 
+namespace coat {
 
 template<class CC, typename T>
 struct Ptr;
 
+} // namespace
 
 #ifdef ENABLE_ASMJIT
 #  include "asmjit/Ptr.h"

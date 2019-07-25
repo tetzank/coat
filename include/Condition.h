@@ -1,6 +1,7 @@
-#ifndef CONDITION_H_
-#define CONDITION_H_
+#ifndef COAT_CONDITION_H_
+#define COAT_CONDITION_H_
 
+namespace coat {
 
 enum class ConditionFlag {
 	e, ne,
@@ -12,6 +13,8 @@ enum class ConditionFlag {
 
 template<class CC>
 struct Condition;
+
+} // namespace
 
 #ifdef ENABLE_ASMJIT
 #  include "asmjit/Condition.h"

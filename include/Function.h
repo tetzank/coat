@@ -1,8 +1,15 @@
-#ifndef FUNCTION_H_
-#define FUNCTION_H_
+#ifndef COAT_FUNCTION_H_
+#define COAT_FUNCTION_H_
 
 #include <type_traits>
 
+#ifdef ENABLE_LLVMJIT
+#  include "runtimellvmjit.h"
+#  include "constexpr_helper.h"
+#endif
+
+
+namespace coat {
 
 //FIXME: forwards
 template<typename F, typename T> struct Value;
@@ -23,9 +30,6 @@ using wrapper_type = std::conditional_t<std::is_arithmetic_v<std::remove_pointer
 					>;
 
 #ifdef ENABLE_LLVMJIT
-
-#include "runtimellvmjit.h"
-#include "constexpr_helper.h"
 
 template<typename T>
 inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx);
@@ -88,6 +92,9 @@ inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
 
 template<typename T, typename F>
 struct Function;
+
+} // namespace
+
 
 #ifdef ENABLE_ASMJIT
 #  include "asmjit/Function.h"

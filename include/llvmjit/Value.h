@@ -1,5 +1,5 @@
-#ifndef LLVMJIT_VALUE_H_
-#define LLVMJIT_VALUE_H_
+#ifndef COAT_LLVMJIT_VALUE_H_
+#define COAT_LLVMJIT_VALUE_H_
 
 #include <llvm/IR/IRBuilder.h>
 
@@ -8,6 +8,7 @@
 //#include "Ref.h"
 //#include "Ptr.h"
 
+namespace coat {
 
 template<typename T>
 struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
@@ -158,5 +159,6 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 template<typename T> Value(::llvm::IRBuilder<>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
 template<typename FnPtr, typename T> Value(Function<runtimellvmjit,FnPtr>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
 
+} // namespace
 
 #endif

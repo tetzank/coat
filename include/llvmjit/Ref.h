@@ -1,7 +1,8 @@
-#ifndef LLVMJIT_REF_H_
-#define LLVMJIT_REF_H_
+#ifndef COAT_LLVMJIT_REF_H_
+#define COAT_LLVMJIT_REF_H_
 
 
+namespace coat {
 
 template<class T>
 struct Ref<::llvm::IRBuilder<>,T> {
@@ -64,5 +65,6 @@ struct Ref<::llvm::IRBuilder<>,T> {
 	Condition<F> operator>=(const Ref &other) const { T tmp(builder, "tmp"); tmp = *this; return tmp>=other; }
 };
 
+} // namespace
 
 #endif

@@ -1,6 +1,8 @@
-#ifndef LLVMJIT_CONTROLFLOW_H_
-#define LLVMJIT_CONTROLFLOW_H_
+#ifndef COAT_LLVMJIT_CONTROLFLOW_H_
+#define COAT_LLVMJIT_CONTROLFLOW_H_
 
+
+namespace coat {
 
 inline void jump(llvm::IRBuilder<> &builder, llvm::BasicBlock *bb_dest){
 	builder.CreateBr(bb_dest);
@@ -61,5 +63,7 @@ void for_each(llvm::IRBuilder<> &builder, Ptr &begin, const Ptr &end, Fn &&body)
 	builder.SetInsertPoint(bb_after);
 }
 
+
+} // namespace
 
 #endif

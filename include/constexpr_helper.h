@@ -1,8 +1,10 @@
-#ifndef CONSTEXPR_HELPER_H_
-#define CONSTEXPR_HELPER_H_
+#ifndef COAT_CONSTEXPR_HELPER_H_
+#define COAT_CONSTEXPR_HELPER_H_
 
 #include <type_traits>
 
+
+namespace coat {
 
 inline constexpr bool is_power_of_two(unsigned value){
 	return (value & (value-1)) == 0;
@@ -17,5 +19,6 @@ inline constexpr int clog2(int x){
 // for use in if-constexpr() and static_assert()
 template<typename T> constexpr std::false_type should_not_be_reached{};
 
+} // namespace
 
 #endif

@@ -1,10 +1,12 @@
-#ifndef LLVMJIT_CONDITION_H_
-#define LLVMJIT_CONDITION_H_
+#ifndef COAT_LLVMJIT_CONDITION_H_
+#define COAT_LLVMJIT_CONDITION_H_
 
 #include <variant>
 
 #include <llvm/IR/IRBuilder.h>
 
+
+namespace coat {
 
 template<>
 struct Condition<::llvm::IRBuilder<>> {
@@ -62,5 +64,6 @@ struct Condition<::llvm::IRBuilder<>> {
 	}
 };
 
+} // namespace
 
 #endif

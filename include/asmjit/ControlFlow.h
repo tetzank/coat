@@ -1,7 +1,8 @@
-#ifndef ASMJIT_CONTROLFLOW_H_
-#define ASMJIT_CONTROLFLOW_H_
+#ifndef COAT_ASMJIT_CONTROLFLOW_H_
+#define COAT_ASMJIT_CONTROLFLOW_H_
 
 
+namespace coat {
 
 inline void jump(::asmjit::x86::Compiler &cc, ::asmjit::Label label){
 	cc.jmp(label);
@@ -58,5 +59,7 @@ void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
 	// label after loop body
 	cc.bind(l_exit);
 }
+
+} // namespace
 
 #endif

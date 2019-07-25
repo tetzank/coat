@@ -13,12 +13,12 @@ void assemble_sum_foreach(Fn &fn){
 	auto &vr_arr = std::get<0>(args);
 	auto &vr_cnt = std::get<1>(args);
 
-	Value vr_sum(fn, 0, "sum");
+	coat::Value vr_sum(fn, 0, "sum");
 	auto vr_arrend = vr_arr + vr_cnt;
-	for_each(fn, vr_arr, vr_arrend, [&](auto &vr_ele){
+	coat::for_each(fn, vr_arr, vr_arrend, [&](auto &vr_ele){
 		vr_sum += vr_ele;
 	});
-	ret(fn, vr_sum);
+	coat::ret(fn, vr_sum);
 }
 
 // generate code, in this case just sum all element in array
@@ -28,13 +28,13 @@ void assemble_sum_counter(Fn &fn){
 	auto &vr_arr = std::get<0>(args);
 	auto &vr_cnt = std::get<1>(args);
 
-	Value vr_sum(fn, 0, "sum");
-	Value vr_idx(fn, 0UL, "idx");
-	loop_while(fn, vr_idx < vr_cnt, [&](){
+	coat::Value vr_sum(fn, 0, "sum");
+	coat::Value vr_idx(fn, 0UL, "idx");
+	coat::loop_while(fn, vr_idx < vr_cnt, [&](){
 		vr_sum += vr_arr[vr_idx];
 		++vr_idx;
 	});
-	ret(fn, vr_sum);
+	coat::ret(fn, vr_sum);
 }
 
 
@@ -54,19 +54,19 @@ int main(int argc, char **argv){
 
 
 	// init JIT backends
-	runtimeAsmjit asmrt;
-	runtimellvmjit::initTarget();
-	runtimellvmjit llvmrt;
+	coat::runtimeAsmjit asmrt;
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
 
 	{
 		using func_type = int (*)();
-		Function<runtimeAsmjit,func_type> fn(&asmrt);
-		Value vr_val3(fn, 0, "val");
-		Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Value vr_val3(fn, 0, "val");
+		coat::Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
 		vr_val = 0;
 		auto vr_val2 = fn.getValue<int>("val");
 		vr_val2 = 0;
-		ret(fn, vr_val);
+		coat::ret(fn, vr_val);
 
 		// finalize function
 		func_type fnptr = fn.finalize(&asmrt);
@@ -78,13 +78,13 @@ int main(int argc, char **argv){
 	}
 	{
 		using func_type = int (*)();
-		Function<runtimellvmjit,func_type> fn(llvmrt);
-		Value vr_val3(fn, 0, "val");
-		Value<::llvm::IRBuilder<>,int> vr_val(fn, "val");
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+		coat::Value vr_val3(fn, 0, "val");
+		coat::Value<::llvm::IRBuilder<>,int> vr_val(fn, "val");
 		vr_val = 0;
 		auto vr_val2 = fn.getValue<int>("val");
 		vr_val2 = 0;
-		ret(fn, vr_val);
+		coat::ret(fn, vr_val);
 
 		// finalize function
 		func_type fnptr = fn.finalize(llvmrt);
@@ -96,7 +96,7 @@ int main(int argc, char **argv){
 
 	{
 		using func_type = int (*)(const int*,size_t);
-		Function<runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
 		assemble_sum_foreach(fn);
 
 		// finalize function
@@ -109,7 +109,7 @@ int main(int argc, char **argv){
 	}
 	{
 		using func_type = int (*)(const int*,size_t);
-		Function<runtimellvmjit,func_type> fn(llvmrt);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 		assemble_sum_foreach(fn);
 
 		// finalize function
@@ -122,7 +122,7 @@ int main(int argc, char **argv){
 
 	{
 		using func_type = int (*)(const int*,size_t);
-		Function<runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
 		assemble_sum_counter(fn);
 
 		// finalize function
@@ -135,7 +135,7 @@ int main(int argc, char **argv){
 	}
 	{
 		using func_type = int (*)(const int*,size_t);
-		Function<runtimellvmjit,func_type> fn(llvmrt);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 		assemble_sum_counter(fn);
 
 		// finalize function

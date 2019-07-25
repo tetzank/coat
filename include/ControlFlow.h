@@ -1,8 +1,5 @@
-#ifndef CONTROLFLOW_H_
-#define CONTROLFLOW_H_
-
-
-//template<typename A, typename B> ret(A&, B&);
+#ifndef COAT_CONTROLFLOW_H_
+#define COAT_CONTROLFLOW_H_
 
 
 #ifdef ENABLE_ASMJIT
