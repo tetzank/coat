@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
 
 #include "include/Function.h"
 #include "include/ControlFlow.h"
@@ -78,6 +79,25 @@ void assemble_getStructElement(Fn &fn){
 	auto vr_ret = fn.template getValue<uint32_t>();
 	vr_ret.widen(vr_m);
 	coat::ret(fn, vr_ret);
+}
+
+template<typename T>
+struct wrapped_vector {
+	using types = std::tuple<T*,T*,T*>;
+};
+
+template<class Fn>
+void assemble_vectorsum(Fn &fn){
+	auto args = fn.getArguments("vector");
+	auto &vr_vector = std::get<0>(args);
+
+	coat::Value vr_sum(fn, 0, "sum");
+	auto vr_pos = vr_vector.template get_value<0>();
+	auto vr_end = vr_vector.template get_value<1>();
+	coat::for_each(fn, vr_pos, vr_end, [&](auto &vr_ele){
+		vr_sum += vr_ele;
+	});
+	coat::ret(fn, vr_sum);
 }
 
 
@@ -238,6 +258,37 @@ int main(int argc, char **argv){
 		// execute generated function
 		int result = fnptr(&t);
 		printf("getStructElement llvmjit: %i\n", result);
+		//FIXME: free function
+	}
+
+	std::vector<int> vec;
+	vec.reserve(cnt);
+	for(size_t i=0; i<cnt; ++i){
+		vec.push_back(array[i]);
+	}
+	{
+		using func_type = int (*)(wrapped_vector<int>*);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		assemble_vectorsum(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		int result = fnptr((wrapped_vector<int>*)&vec);
+		printf("vectorsum  asmjit: %i\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+	{
+		using func_type = int (*)(wrapped_vector<int>*);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+		assemble_vectorsum(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr((wrapped_vector<int>*)&vec);
+		printf("vectorsum llvmjit: %i\n", result);
 		//FIXME: free function
 	}
 
