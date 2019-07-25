@@ -38,6 +38,26 @@ void assemble_sum_counter(Fn &fn){
 }
 
 
+// generate code, sum if element is odd
+template<class Fn>
+void assemble_condsum_loop(Fn &fn){
+	auto args = fn.getArguments("arr", "cnt");
+	auto &vr_arr = std::get<0>(args);
+	auto &vr_cnt = std::get<1>(args);
+
+	coat::Value vr_sum(fn, 0, "sum");
+	auto vr_arrend = vr_arr + vr_cnt;
+	coat::do_while(fn, [&]{
+		auto vr_ele = *vr_arr;
+		if_then(fn, (vr_ele & 1) != 0, [&]{
+			vr_sum += vr_ele;
+		});
+		++vr_arr;
+	}, vr_arr != vr_arrend);
+	coat::ret(fn, vr_sum);
+}
+
+
 
 int main(int argc, char **argv){
 	if(argc < 3){
@@ -137,6 +157,32 @@ int main(int argc, char **argv){
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 		assemble_sum_counter(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		int result = fnptr(array, cnt);
+		printf("result with loop_while and llvmjit: %i\n", result);
+		//FIXME: free function
+	}
+
+	{
+		using func_type = int (*)(const int*,size_t);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		assemble_condsum_loop(fn);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		int result = fnptr(array, cnt);
+		printf("result with loop_while and  asmjit: %i\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+	{
+		using func_type = int (*)(const int*,size_t);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+		assemble_condsum_loop(fn);
 
 		// finalize function
 		func_type fnptr = fn.finalize(llvmrt);

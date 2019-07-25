@@ -24,6 +24,31 @@ inline void ret(Function<runtimeAsmjit,FnPtr> &ctx, VReg &reg){
 
 
 template<typename Fn>
+void if_then(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&then){
+	::asmjit::Label l_exit = cc.newLabel();
+	// check
+	jump(cc, !cond, l_exit); // if not jump over
+	then();
+	// label after then branch
+	cc.bind(l_exit);
+}
+
+template<typename Then, typename Else>
+void if_then_else(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Then &&then, Else &&else_){
+	::asmjit::Label l_else = cc.newLabel();
+	::asmjit::Label l_exit = cc.newLabel();
+	// check
+	jump(cc, !cond, l_else); // if not jump to else
+	then();
+	jump(cc, l_exit);
+	cc.bind(l_else);
+	else_();
+	// label after then branch
+	cc.bind(l_exit);
+}
+
+
+template<typename Fn>
 void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&body){
 	::asmjit::Label l_loop = cc.newLabel();
 	::asmjit::Label l_exit = cc.newLabel();
@@ -40,6 +65,17 @@ void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> 
 	cc.bind(l_exit);
 }
 
+template<typename Fn>
+void do_while(::asmjit::x86::Compiler &cc, Fn &&body, Condition<::asmjit::x86::Compiler> cond){
+	::asmjit::Label l_loop = cc.newLabel();
+
+	// no checking if even one iteration
+
+	// loop
+	cc.bind(l_loop);
+		body();
+	jump(cc, cond, l_loop);
+}
 
 template<class Ptr, typename Fn>
 void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){

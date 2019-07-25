@@ -66,7 +66,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	// assignment
 	Value &operator=(const Value &other){ store( other.load() ); return *this; }
 	Value &operator=(int value){ store( llvm::ConstantInt::get(type(), value) ); return *this; }
-	//Value &operator=(const Ref<Value> &other){ store( other.load() ); return *this; }
+	Value &operator=(const Ref<F,Value> &other){ store( other.load() ); return *this; }
 	//FIXME: takes any type
 	Value &operator=(llvm::Value *val){ store( val ); return *this; }
 
