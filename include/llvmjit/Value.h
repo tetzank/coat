@@ -20,22 +20,22 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	static_assert(std::is_signed_v<T> || std::is_unsigned_v<T>,
 		"only plain signed or unsigned arithmetic types supported");
 
-	Value(llvm::IRBuilder<> &builder, const char *name="") : ValueBase(builder) {
+	Value(llvm::IRBuilder<> &cc, const char *name="") : ValueBase(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(T)){
-			case 1: memreg = builder.CreateAlloca(llvm::Type::getInt8Ty (builder.getContext()), nullptr, name); break;
-			case 2: memreg = builder.CreateAlloca(llvm::Type::getInt16Ty(builder.getContext()), nullptr, name); break;
-			case 4: memreg = builder.CreateAlloca(llvm::Type::getInt32Ty(builder.getContext()), nullptr, name); break;
-			case 8: memreg = builder.CreateAlloca(llvm::Type::getInt64Ty(builder.getContext()), nullptr, name); break;
+			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8Ty (cc.getContext()), nullptr, name); break;
+			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16Ty(cc.getContext()), nullptr, name); break;
+			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32Ty(cc.getContext()), nullptr, name); break;
+			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64Ty(cc.getContext()), nullptr, name); break;
 		}
 	}
-	Value(llvm::IRBuilder<> &builder, T val, const char *name="") : ValueBase(builder) {
+	Value(llvm::IRBuilder<> &cc, T val, const char *name="") : ValueBase(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(T)){
-			case 1: memreg = builder.CreateAlloca(llvm::Type::getInt8Ty (builder.getContext()), nullptr, name); break;
-			case 2: memreg = builder.CreateAlloca(llvm::Type::getInt16Ty(builder.getContext()), nullptr, name); break;
-			case 4: memreg = builder.CreateAlloca(llvm::Type::getInt32Ty(builder.getContext()), nullptr, name); break;
-			case 8: memreg = builder.CreateAlloca(llvm::Type::getInt64Ty(builder.getContext()), nullptr, name); break;
+			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8Ty (cc.getContext()), nullptr, name); break;
+			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16Ty(cc.getContext()), nullptr, name); break;
+			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32Ty(cc.getContext()), nullptr, name); break;
+			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64Ty(cc.getContext()), nullptr, name); break;
 		}
 		*this = val;
 	}
@@ -48,7 +48,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	template<class O>
 	Value &narrow(const O &other){
 		static_assert(sizeof(T) < sizeof(typename O::value_type), "narrowing conversion called on wrong types");
-		store( builder.CreateTrunc(other.load(), type()) );
+		store( cc.CreateTrunc(other.load(), type()) );
 		return *this;
 	}
 
@@ -60,9 +60,9 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 			static_assert(sizeof(T) > sizeof(typename O::inner_type::value_type), "widening conversion called on wrong types");
 		}
 		if constexpr(std::is_signed_v<T>){
-			store( builder.CreateSExt(other.load(), type()) );
+			store( cc.CreateSExt(other.load(), type()) );
 		}else{
-			store( builder.CreateZExt(other.load(), type()) );
+			store( cc.CreateZExt(other.load(), type()) );
 		}
 		return *this;
 	}
@@ -74,23 +74,23 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	//FIXME: takes any type
 	Value &operator=(llvm::Value *val){ store( val ); return *this; }
 
-	Value &operator<<=(const Value &other){ store( builder.CreateShl(load(), other.load()) ); return *this; }
-	Value &operator<<=(int amount){ store( builder.CreateShl(load(), amount) ); return *this; }
+	Value &operator<<=(const Value &other){ store( cc.CreateShl(load(), other.load()) ); return *this; }
+	Value &operator<<=(int amount){ store( cc.CreateShl(load(), amount) ); return *this; }
 	// memory operand not possible on right side
 
 	Value &operator>>=(const Value &other){
 		if constexpr(std::is_signed_v<T>){
-			store( builder.CreateAShr(load(), other.load()) );
+			store( cc.CreateAShr(load(), other.load()) );
 		}else{
-			store( builder.CreateLShr(load(), other.load()) );
+			store( cc.CreateLShr(load(), other.load()) );
 		}
 		return *this;
 	}
 	Value &operator>>=(int amount){
 		if constexpr(std::is_signed_v<T>){
-			store( builder.CreateAShr(load(), amount) );
+			store( cc.CreateAShr(load(), amount) );
 		}else{
-			store( builder.CreateLShr(load(), amount) );
+			store( cc.CreateLShr(load(), amount) );
 		}
 		return *this;
 	}
@@ -98,48 +98,48 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 
 	//TODO: *=, /= %=
 
-	Value &operator+=(const Value &other){ store( builder.CreateAdd(load(), other.load()) ); return *this; }
-	Value &operator+=(int constant){ store( builder.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
-	Value &operator+=(const Ref<F,Value> &other){ store( builder.CreateAdd(load(), other.load()) ); return *this; }
+	Value &operator+=(const Value &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
+	Value &operator+=(int constant){ store( cc.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
+	Value &operator+=(const Ref<F,Value> &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
 
-	Value &operator-=(const Value &other){ store( builder.CreateSub(load(), other.load()) ); return *this; }
-	Value &operator-=(int constant){ store( builder.CreateSub(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
-	Value &operator-=(const Ref<F,Value> &other){ store( builder.CreateSub(load(), other.load()) ); return *this; }
+	Value &operator-=(const Value &other){ store( cc.CreateSub(load(), other.load()) ); return *this; }
+	Value &operator-=(int constant){ store( cc.CreateSub(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
+	Value &operator-=(const Ref<F,Value> &other){ store( cc.CreateSub(load(), other.load()) ); return *this; }
 
-	Value &operator&=(const Value &other){          store( builder.CreateAnd(load(), other.load()) ); return *this; }
-	Value &operator&=(int constant){               store( builder.CreateAnd(load(), constant) ); return *this; }
+	Value &operator&=(const Value &other){          store( cc.CreateAnd(load(), other.load()) ); return *this; }
+	Value &operator&=(int constant){               store( cc.CreateAnd(load(), constant) ); return *this; }
 	//Value &operator&=(const Ref<Value> &other){ cc.and_(reg, other); return *this; }
 
-	Value &operator|=(const Value &other){          store( builder.CreateOr(load(), other.load()) ); return *this; }
-	Value &operator|=(int constant){               store( builder.CreateOr(load(), constant) ); return *this; }
+	Value &operator|=(const Value &other){          store( cc.CreateOr(load(), other.load()) ); return *this; }
+	Value &operator|=(int constant){               store( cc.CreateOr(load(), constant) ); return *this; }
 	//Value &operator|=(const Ref<Value> &other){ cc.or_(reg, other); return *this; }
 
-	Value &operator^=(const Value &other){          store( builder.CreateXor(load(), other.load()) ); return *this; }
-	Value &operator^=(int constant){               store( builder.CreateXor(load(), constant) ); return *this; }
+	Value &operator^=(const Value &other){          store( cc.CreateXor(load(), other.load()) ); return *this; }
+	Value &operator^=(int constant){               store( cc.CreateXor(load(), constant) ); return *this; }
 	//Value &operator^=(const Ref<Value> &other){ cc.xor_(reg, other); return *this; }
 
 	//Value &operator~(){ cc.not_(reg); return *this; }
 
 	//TODO: operations
 	// comparisons
-	Condition<F> operator==(const Value &other) const { return {builder, memreg, other.memreg, ConditionFlag::e};  }
-	Condition<F> operator!=(const Value &other) const { return {builder, memreg, other.memreg, ConditionFlag::ne}; }
-	Condition<F> operator< (const Value &other) const { return {builder, memreg, other.memreg, less()};  }
-	Condition<F> operator<=(const Value &other) const { return {builder, memreg, other.memreg, less_equal()}; }
-	Condition<F> operator> (const Value &other) const { return {builder, memreg, other.memreg, greater()};  }
-	Condition<F> operator>=(const Value &other) const { return {builder, memreg, other.memreg, greater_equal()}; }
-	Condition<F> operator==(int constant) const { return {builder, memreg, constant, ConditionFlag::e};  }
-	Condition<F> operator!=(int constant) const { return {builder, memreg, constant, ConditionFlag::ne}; }
-	Condition<F> operator< (int constant) const { return {builder, memreg, constant, less()};  }
-	Condition<F> operator<=(int constant) const { return {builder, memreg, constant, less_equal()}; }
-	Condition<F> operator> (int constant) const { return {builder, memreg, constant, greater()};  }
-	Condition<F> operator>=(int constant) const { return {builder, memreg, constant, greater_equal()}; }
-	Condition<F> operator==(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::e};  }
-	Condition<F> operator!=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, ConditionFlag::ne}; }
-	Condition<F> operator< (const Ref<F,Value> &other) const { return {builder, memreg, other.mem, less()};  }
-	Condition<F> operator<=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, less_equal()}; }
-	Condition<F> operator> (const Ref<F,Value> &other) const { return {builder, memreg, other.mem, greater()};  }
-	Condition<F> operator>=(const Ref<F,Value> &other) const { return {builder, memreg, other.mem, greater_equal()}; }
+	Condition<F> operator==(const Value &other) const { return {cc, memreg, other.memreg, ConditionFlag::e};  }
+	Condition<F> operator!=(const Value &other) const { return {cc, memreg, other.memreg, ConditionFlag::ne}; }
+	Condition<F> operator< (const Value &other) const { return {cc, memreg, other.memreg, less()};  }
+	Condition<F> operator<=(const Value &other) const { return {cc, memreg, other.memreg, less_equal()}; }
+	Condition<F> operator> (const Value &other) const { return {cc, memreg, other.memreg, greater()};  }
+	Condition<F> operator>=(const Value &other) const { return {cc, memreg, other.memreg, greater_equal()}; }
+	Condition<F> operator==(int constant) const { return {cc, memreg, constant, ConditionFlag::e};  }
+	Condition<F> operator!=(int constant) const { return {cc, memreg, constant, ConditionFlag::ne}; }
+	Condition<F> operator< (int constant) const { return {cc, memreg, constant, less()};  }
+	Condition<F> operator<=(int constant) const { return {cc, memreg, constant, less_equal()}; }
+	Condition<F> operator> (int constant) const { return {cc, memreg, constant, greater()};  }
+	Condition<F> operator>=(int constant) const { return {cc, memreg, constant, greater_equal()}; }
+	Condition<F> operator==(const Ref<F,Value> &other) const { return {cc, memreg, other.mem, ConditionFlag::e};  }
+	Condition<F> operator!=(const Ref<F,Value> &other) const { return {cc, memreg, other.mem, ConditionFlag::ne}; }
+	Condition<F> operator< (const Ref<F,Value> &other) const { return {cc, memreg, other.mem, less()};  }
+	Condition<F> operator<=(const Ref<F,Value> &other) const { return {cc, memreg, other.mem, less_equal()}; }
+	Condition<F> operator> (const Ref<F,Value> &other) const { return {cc, memreg, other.mem, greater()};  }
+	Condition<F> operator>=(const Ref<F,Value> &other) const { return {cc, memreg, other.mem, greater_equal()}; }
 
 	static inline constexpr ConditionFlag less(){
 		if constexpr(std::is_signed_v<T>) return ConditionFlag::l;

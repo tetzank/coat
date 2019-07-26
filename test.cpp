@@ -303,16 +303,30 @@ int main(int argc, char **argv){
 		auto args = fn.getArguments("podvec");
 		auto &vr_podvec = std::get<0>(args);
 		auto vr_size = vr_podvec.size();
+
+		coat::Value vr_sum(fn, 0, "sum");
+		auto vr_beg = vr_podvec.get_value<0>();
+		auto vr_end = vr_podvec.get_value<1>();
+		coat::for_each(fn, vr_beg, vr_end, [&](auto &vr_ele){
+			vr_sum += vr_ele;
+		});
+		vr_podvec.push_back(vr_sum);
+
 		coat::ret(fn, vr_size);
 
 		// finalize function
 		func_type fnptr = fn.finalize(&asmrt);
 		// execute generated function
 		size_t result = fnptr(&pod_vec);
-		printf("podvec  asmjit: %lu\n", result);
+		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
 
 		asmrt.rt.release(fnptr);
 	}
+	printf("current elements: ");
+	for(const auto &ele : pod_vec){
+		printf("%i, ", ele);
+	}
+	printf("\n");
 
 
 	delete[] array;

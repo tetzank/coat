@@ -16,20 +16,20 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 
 	static_assert(std::is_base_of_v<value_base_type,T>, "pointer type only of register wrappers");
 
-	llvm::IRBuilder<> &builder;
+	llvm::IRBuilder<> &cc;
 	llvm::Value *memreg;
 
-	llvm::Value *load() const { return builder.CreateLoad(memreg, "load"); }
-	void store(llvm::Value *v) { builder.CreateStore(v, memreg); }
+	llvm::Value *load() const { return cc.CreateLoad(memreg, "load"); }
+	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
-	Ptr(llvm::IRBuilder<> &builder, const char *name="") : builder(builder) {
+	Ptr(llvm::IRBuilder<> &cc, const char *name="") : cc(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(value_type)){
-			case 1: memreg = builder.CreateAlloca(llvm::Type::getInt8PtrTy (builder.getContext()), nullptr, name); break;
-			case 2: memreg = builder.CreateAlloca(llvm::Type::getInt16PtrTy(builder.getContext()), nullptr, name); break;
-			case 4: memreg = builder.CreateAlloca(llvm::Type::getInt32PtrTy(builder.getContext()), nullptr, name); break;
-			case 8: memreg = builder.CreateAlloca(llvm::Type::getInt64PtrTy(builder.getContext()), nullptr, name); break;
+			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8PtrTy (cc.getContext()), nullptr, name); break;
+			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16PtrTy(cc.getContext()), nullptr, name); break;
+			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32PtrTy(cc.getContext()), nullptr, name); break;
+			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64PtrTy(cc.getContext()), nullptr, name); break;
 		}
 	}
 	//FIXME: takes any type
@@ -37,55 +37,55 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 
 	// dereference
 	mem_type operator*(){
-		return { builder, builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), 0)) };
+		return { cc, cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), 0)) };
 	}
 	// indexing with variable
 	mem_type operator[](const value_base_type &idx){
-		return { builder, builder.CreateGEP(load(), idx.load()) };
+		return { cc, cc.CreateGEP(load(), idx.load()) };
 	}
 	// indexing with constant -> use offset
 	mem_type operator[](size_t idx){
-		return { builder, builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), idx)) };
+		return { cc, cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), idx)) };
 	}
 	
 	Ptr operator+(const value_base_type &value) const {
-		Ptr res(builder);
-		res.store( builder.CreateGEP(load(), value.load()) );
+		Ptr res(cc);
+		res.store( cc.CreateGEP(load(), value.load()) );
 		return res;
 	}
 	Ptr operator+(size_t value) const {
-		Ptr res(builder);
-		res.store( builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), value)) );
+		Ptr res(cc);
+		res.store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), value)) );
 		return res;
 	}
 
 	Ptr &operator+=(const value_base_type &value){
-		store( builder.CreateGEP(load(), value.load()) );
+		store( cc.CreateGEP(load(), value.load()) );
 		return *this;
 	}
 	Ptr &operator+=(int amount){
-		store( builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), amount)) );
+		store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), amount)) );
 		return *this;
 	}
 	Ptr &operator-=(int amount){
-		store( builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), -amount)) );
+		store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), -amount)) );
 		return *this;
 	}
 
 	// pre-increment, post-increment not provided as it creates temporary
 	Ptr &operator++(){
-		store( builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), 1)) );
+		store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), 1)) );
 		return *this;
 	}
 	// pre-decrement
 	Ptr &operator--(){
-		store( builder.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(builder.getContext()), -1)) );
+		store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), -1)) );
 		return *this;
 	}
 
 	// comparisons
-	Condition<F> operator==(const Ptr &other) const { return {builder, memreg, other.memreg, ConditionFlag::e};  }
-	Condition<F> operator!=(const Ptr &other) const { return {builder, memreg, other.memreg, ConditionFlag::ne}; }
+	Condition<F> operator==(const Ptr &other) const { return {cc, memreg, other.memreg, ConditionFlag::e};  }
+	Condition<F> operator!=(const Ptr &other) const { return {cc, memreg, other.memreg, ConditionFlag::ne}; }
 };
 
 } // namespace

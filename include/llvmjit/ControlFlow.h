@@ -4,141 +4,170 @@
 
 namespace coat {
 
-inline void jump(llvm::IRBuilder<> &builder, llvm::BasicBlock *bb_dest){
-	builder.CreateBr(bb_dest);
+inline void jump(llvm::IRBuilder<> &cc, llvm::BasicBlock *bb_dest){
+	cc.CreateBr(bb_dest);
 }
-inline void jump(llvm::IRBuilder<> &builder, Condition<::llvm::IRBuilder<>> cond, llvm::BasicBlock *bb_success, llvm::BasicBlock *bb_fail){
+inline void jump(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, llvm::BasicBlock *bb_success, llvm::BasicBlock *bb_fail){
 	cond.compare();
 	cond.jump(bb_success, bb_fail);
 }
 
 
-inline void ret(::llvm::IRBuilder<> &builder){
-	builder.CreateRetVoid();
+inline void ret(::llvm::IRBuilder<> &cc){
+	cc.CreateRetVoid();
 }
 template<typename FnPtr, typename VReg>
 inline void ret(Function<runtimellvmjit,FnPtr> &ctx, VReg &reg){
 	static_assert(std::is_same_v<typename Function<runtimellvmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
-	ctx.builder.CreateRet(reg.load());
+	ctx.cc.CreateRet(reg.load());
 }
 
 
 template<typename Fn>
-void if_then(llvm::IRBuilder<> &builder, Condition<::llvm::IRBuilder<>> cond, Fn &&then){
-	llvm::BasicBlock *bb_current = builder.GetInsertBlock();
+void if_then(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Fn &&then){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
-	llvm::BasicBlock *bb_then = llvm::BasicBlock::Create(builder.getContext(), "then", fn);
-	llvm::BasicBlock *bb_afterthen = llvm::BasicBlock::Create(builder.getContext(), "afterthen", fn);
+	llvm::BasicBlock *bb_then = llvm::BasicBlock::Create(cc.getContext(), "then", fn);
+	llvm::BasicBlock *bb_afterthen = llvm::BasicBlock::Create(cc.getContext(), "afterthen", fn);
 	// check
-	jump(builder, cond, bb_then, bb_afterthen); // if not jump over
+	jump(cc, cond, bb_then, bb_afterthen); // if not jump over
 
-	builder.SetInsertPoint(bb_then);
+	cc.SetInsertPoint(bb_then);
 	then();
 	// if then() already emitted a terminator (e.g., early exit with ret), don't emit branch
 	// sometimes there is a cleanupret, which is a terminator but should be ignored
-	//if(!builder.GetInsertBlock()->back().isTerminator()){
+	//if(!cc.GetInsertBlock()->back().isTerminator()){
 	// just check for the return instruction as we actually just care about an early exit for now
-	if(builder.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
-		jump(builder, bb_afterthen);
+	if(cc.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
+		jump(cc, bb_afterthen);
 #if 0
 	}else{
 		//DEBUG
-		llvm::BasicBlock *bb = builder.GetInsertBlock();
+		llvm::BasicBlock *bb = cc.GetInsertBlock();
 		printf("found terminator in BB %s: %s (%u)\n", bb->getName().data(), bb->back().getOpcodeName(), bb->back().getOpcode());
 #endif
 	}
 
 	// label after then branch
-	builder.SetInsertPoint(bb_afterthen);
+	cc.SetInsertPoint(bb_afterthen);
 }
 
 template<typename Then, typename Else>
-void if_then_else(llvm::IRBuilder<> &builder, Condition<::llvm::IRBuilder<>> cond, Then &&then, Else &&else_){
-	llvm::BasicBlock *bb_current = builder.GetInsertBlock();
+void if_then_else(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Then &&then, Else &&else_){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
-	llvm::BasicBlock *bb_then = llvm::BasicBlock::Create(builder.getContext(), "then", fn);
-	llvm::BasicBlock *bb_else = llvm::BasicBlock::Create(builder.getContext(), "else", fn);
-	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(builder.getContext(), "after", fn);
+	llvm::BasicBlock *bb_then = llvm::BasicBlock::Create(cc.getContext(), "then", fn);
+	llvm::BasicBlock *bb_else = llvm::BasicBlock::Create(cc.getContext(), "else", fn);
+	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
 	// check
-	jump(builder, cond, bb_then, bb_else); // if not jump to else
+	jump(cc, cond, bb_then, bb_else); // if not jump to else
 
-	builder.SetInsertPoint(bb_then);
+	cc.SetInsertPoint(bb_then);
 	then();
 	// if then() already emitted a ret, don't emit branch
 	// see if_then() for details
-	if(builder.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
-		jump(builder, bb_after);
+	if(cc.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
+		jump(cc, bb_after);
 	}
 
-	builder.SetInsertPoint(bb_else);
+	cc.SetInsertPoint(bb_else);
 	else_();
 	// if else_() already emitted a ret, don't emit branch
-	if(builder.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
-		jump(builder, bb_after);
+	if(cc.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
+		jump(cc, bb_after);
 	}
 
 	// label after then branch
-	builder.SetInsertPoint(bb_after);
+	cc.SetInsertPoint(bb_after);
 }
 
 
 template<typename Fn>
-void loop_while(llvm::IRBuilder<> &builder, Condition<::llvm::IRBuilder<>> cond, Fn &&body){
-	llvm::BasicBlock *bb_current = builder.GetInsertBlock();
+void loop_while(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Fn &&body){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
-	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(builder.getContext(), "loop", fn);
-	llvm::BasicBlock *bb_afterloop = llvm::BasicBlock::Create(builder.getContext(), "afterloop", fn);
+	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.getContext(), "loop", fn);
+	llvm::BasicBlock *bb_afterloop = llvm::BasicBlock::Create(cc.getContext(), "afterloop", fn);
 
 	// check if even one iteration
-	jump(builder, cond, bb_loop, bb_afterloop); // if not jump over
+	jump(cc, cond, bb_loop, bb_afterloop); // if not jump over
 
 	// loop
-	builder.SetInsertPoint(bb_loop);
+	cc.SetInsertPoint(bb_loop);
 		body();
-	jump(builder, cond, bb_loop, bb_afterloop);
+	jump(cc, cond, bb_loop, bb_afterloop);
 
 	// label after loop body
-	builder.SetInsertPoint(bb_afterloop);
+	cc.SetInsertPoint(bb_afterloop);
 }
 
 template<typename Fn>
-void do_while(llvm::IRBuilder<> &builder, Fn &&body, Condition<::llvm::IRBuilder<>> cond){
-	llvm::BasicBlock *bb_current = builder.GetInsertBlock();
+void do_while(llvm::IRBuilder<> &cc, Fn &&body, Condition<::llvm::IRBuilder<>> cond){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
-	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(builder.getContext(), "loop", fn);
-	llvm::BasicBlock *bb_afterloop = llvm::BasicBlock::Create(builder.getContext(), "afterloop", fn);
+	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.getContext(), "loop", fn);
+	llvm::BasicBlock *bb_afterloop = llvm::BasicBlock::Create(cc.getContext(), "afterloop", fn);
 
 	// no checking, but still have to jump to basic block containing the loop
-	jump(builder, bb_loop);
+	jump(cc, bb_loop);
 
 	// loop
-	builder.SetInsertPoint(bb_loop);
+	cc.SetInsertPoint(bb_loop);
 		body();
-	jump(builder, cond, bb_loop, bb_afterloop);
+	jump(cc, cond, bb_loop, bb_afterloop);
 
 	// label after loop body
-	builder.SetInsertPoint(bb_afterloop);
+	cc.SetInsertPoint(bb_afterloop);
 }
 
 template<class Ptr, typename Fn>
-void for_each(llvm::IRBuilder<> &builder, Ptr &begin, const Ptr &end, Fn &&body){
-	llvm::BasicBlock *bb_current = builder.GetInsertBlock();
+void for_each(llvm::IRBuilder<> &cc, Ptr &begin, const Ptr &end, Fn &&body){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
-	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(builder.getContext(), "foreach", fn);
-	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(builder.getContext(), "after", fn);
+	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.getContext(), "foreach", fn);
+	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
 
 	// check if even one iteration
-	jump(builder, begin == end, bb_after, bb_loop);
+	jump(cc, begin == end, bb_after, bb_loop);
 
 	// loop over all elements
-	builder.SetInsertPoint(bb_loop);
+	cc.SetInsertPoint(bb_loop);
 		typename Ptr::mem_type vr_ele = *begin;
 		body(vr_ele);
 		++begin;
-	jump(builder, begin != end, bb_loop, bb_after);
+	jump(cc, begin != end, bb_loop, bb_after);
 
 	// label after loop body
-	builder.SetInsertPoint(bb_after);
+	cc.SetInsertPoint(bb_after);
+}
+
+
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
+FunctionCallImpl(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
+	llvm::Function *fn = currentModule->getFunction(name);
+	if(!fn){
+		// first call to external function
+		llvm::LLVMContext &ctx = currentModule->getContext();
+		llvm::FunctionType *func_type = llvm::FunctionType::get(
+			getLLVMType<std::remove_cv_t<R>>(ctx),
+			{(getLLVMType<std::remove_cv_t<Args>>(ctx))...},
+			false
+		);
+		// add function to module
+		fn = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, name, currentModule);
+		fn->setCallingConv(llvm::CallingConv::C);
+	}
+	// call
+	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments... });
+
+	if constexpr(!std::is_void_v<R>){
+		// return value
+		reg_type<::llvm::IRBuilder<>,R> ret(cc, "callreturn");
+		ret = call_inst;
+		return ret;
+	}
 }
 
 

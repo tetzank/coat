@@ -30,6 +30,10 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		cc.mov(reg, ::asmjit::imm(value));
 		return *this;
 	}
+	Ptr &operator=(const Ptr &other){
+		cc.mov(reg, other.reg);
+		return *this;
+	}
 
 	operator const ::asmjit::x86::Gp&() const { return reg; }
 	operator       ::asmjit::x86::Gp&()       { return reg; }
@@ -84,6 +88,10 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 
 	Ptr &operator+=(int amount){ cc.add(reg, amount*sizeof(value_type)); return *this; }
 	Ptr &operator-=(int amount){ cc.sub(reg, amount*sizeof(value_type)); return *this; }
+	Ptr &operator+=(const value_base_type &value){
+		cc.lea(reg, ::asmjit::x86::ptr(reg, value.reg, clog2(sizeof(value_type))));
+		return *this;
+	}
 
 	// operators creating temporary virtual registers
 	Value<F,size_t> operator- (const Ptr &other) const {

@@ -96,6 +96,39 @@ void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
 	cc.bind(l_exit);
 }
 
+
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
+FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), reg_type<::asmjit::x86::Compiler,Args>... arguments){
+	if constexpr(std::is_void_v<R>){
+		::asmjit::FuncCallNode *c = cc.call((uint64_t)(void*)fnptr, ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+	}else{
+		reg_type<::asmjit::x86::Compiler,R> ret(cc, "");
+		::asmjit::FuncCallNode *c = cc.call((uint64_t)(void*)fnptr, ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+		// return value
+		c->setRet(0, ret);
+		return ret;
+	}
+}
+
+
+// pointer difference in bytes, no pointer arithmetic (used by operators)
+template<typename T>
+Value<::asmjit::x86::Compiler,size_t> distance(::asmjit::x86::Compiler &cc, Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>> &beg, Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>> &end){
+	Value<::asmjit::x86::Compiler,size_t> vr_ret(cc, "distance");
+	cc.mov(vr_ret, end);
+	cc.sub(vr_ret, beg);
+	return vr_ret;
+}
+
 } // namespace
 
 #endif

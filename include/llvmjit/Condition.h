@@ -10,15 +10,15 @@ namespace coat {
 
 template<>
 struct Condition<::llvm::IRBuilder<>> {
-	llvm::IRBuilder<> &builder;
+	llvm::IRBuilder<> &cc;
 	llvm::Value *cmp_result;
 	llvm::Value *reg;
 	using operand_t = std::variant<llvm::Value*,int>;
 	operand_t operand;
 	ConditionFlag cond;
 
-	Condition(llvm::IRBuilder<> &builder, llvm::Value *reg, operand_t operand, ConditionFlag cond)
-		: builder(builder), reg(reg), operand(operand), cond(cond) {}
+	Condition(llvm::IRBuilder<> &cc, llvm::Value *reg, operand_t operand, ConditionFlag cond)
+		: cc(cc), reg(reg), operand(operand), cond(cond) {}
 
 	Condition operator!() const {
 		ConditionFlag newcond;
@@ -34,33 +34,35 @@ struct Condition<::llvm::IRBuilder<>> {
 			case ConditionFlag::a : newcond = ConditionFlag::be; break;
 			case ConditionFlag::ae: newcond = ConditionFlag::b ; break;
 		}
-		return {builder, reg, operand, newcond};
+		return {cc, reg, operand, newcond};
 	}
 
 	void compare() {
-		llvm::Value *val = builder.CreateLoad(reg, "load");
+		llvm::Value *val = cc.CreateLoad(reg, "load");
 		llvm::Value *other;
 		switch(operand.index()){
-			case 0: other = builder.CreateLoad( std::get<llvm::Value*>(operand) ); break;
+			case 0: other = cc.CreateLoad( std::get<llvm::Value*>(operand) ); break;
 			case 1:
 				other = llvm::ConstantInt::get(((llvm::PointerType*)reg->getType())->getElementType(), std::get<int>(operand));
 				break;
+			default:
+				__builtin_trap(); // should not be reached
 		}
 		switch(cond){
-			case ConditionFlag::e : cmp_result = builder.CreateICmpEQ (val, other); break;
-			case ConditionFlag::ne: cmp_result = builder.CreateICmpNE (val, other); break;
-			case ConditionFlag::l : cmp_result = builder.CreateICmpSLT(val, other); break;
-			case ConditionFlag::le: cmp_result = builder.CreateICmpSLE(val, other); break;
-			case ConditionFlag::g : cmp_result = builder.CreateICmpSGT(val, other); break;
-			case ConditionFlag::ge: cmp_result = builder.CreateICmpSGE(val, other); break;
-			case ConditionFlag::b : cmp_result = builder.CreateICmpULT(val, other); break;
-			case ConditionFlag::be: cmp_result = builder.CreateICmpULE(val, other); break;
-			case ConditionFlag::a : cmp_result = builder.CreateICmpUGT(val, other); break;
-			case ConditionFlag::ae: cmp_result = builder.CreateICmpUGE(val, other); break;
+			case ConditionFlag::e : cmp_result = cc.CreateICmpEQ (val, other); break;
+			case ConditionFlag::ne: cmp_result = cc.CreateICmpNE (val, other); break;
+			case ConditionFlag::l : cmp_result = cc.CreateICmpSLT(val, other); break;
+			case ConditionFlag::le: cmp_result = cc.CreateICmpSLE(val, other); break;
+			case ConditionFlag::g : cmp_result = cc.CreateICmpSGT(val, other); break;
+			case ConditionFlag::ge: cmp_result = cc.CreateICmpSGE(val, other); break;
+			case ConditionFlag::b : cmp_result = cc.CreateICmpULT(val, other); break;
+			case ConditionFlag::be: cmp_result = cc.CreateICmpULE(val, other); break;
+			case ConditionFlag::a : cmp_result = cc.CreateICmpUGT(val, other); break;
+			case ConditionFlag::ae: cmp_result = cc.CreateICmpUGE(val, other); break;
 		}
 	}
 	void jump(llvm::BasicBlock *bb_success, llvm::BasicBlock *bb_fail) const {
-		builder.CreateCondBr(cmp_result, bb_success, bb_fail);
+		cc.CreateCondBr(cmp_result, bb_success, bb_fail);
 	}
 };
 

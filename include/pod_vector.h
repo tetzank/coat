@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <cassert>
 
+#include "Struct.h"
+#include "ControlFlow.h"
+
 
 template<typename T, size_t initial_size=1024>
 class pod_vector {
@@ -129,8 +132,32 @@ struct has_custom_base<pod_vector<T,I>> : std::true_type {};
 
 template<class CC, typename T, size_t I>
 struct StructBase<Struct<CC,pod_vector<T,I>>> {
+	void push_back(Value<CC,T> &value){
+		auto &self = static_cast<Struct<CC,pod_vector<T,I>>&>(*this);
+		//FIXME: accessed each time
+		auto vr_finish = self.template get_value<1>();
+		auto vr_capend = self.template get_value<2>();
+		// grow in size if full
+		coat::if_then(self.cc, vr_finish == vr_capend, [&]{
+			auto vr_start = self.template get_value<0>();
+			// get size in bytes
+			auto vr_size = coat::distance(self.cc, vr_start, vr_finish);
+			// call realloc with increased size
+			using realloc_type = T *(*)(T*,size_t); // fix realloc void* type issue, coat has no cast
+			auto vr_newstart = coat::FunctionCall(self.cc, (realloc_type)realloc, vr_start, vr_size << 1);
+			// assign members of vector new values after realloc
+			self.template get_reference<0>() = vr_newstart;
+			vr_finish = vr_newstart += vr_size;
+			self.template get_reference<2>() = vr_newstart += vr_size;
+		});
+		*vr_finish = value;
+		++vr_finish;
+		self.template get_reference<1>() = vr_finish;
+	}
+
 	Value<CC,size_t> size() {
 		auto &self = static_cast<Struct<CC,pod_vector<T,I>>&>(*this);
+		//FIXME: accessed each time
 		auto vr_start = self.template get_value<0>();
 		auto vr_finish = self.template get_value<1>();
 		return vr_finish - vr_start;
