@@ -52,6 +52,9 @@ struct Condition<::asmjit::x86::Compiler> {
 			case 0: cc.cmp(reg, std::get<::asmjit::x86::Gp>(operand)); break;
 			case 1: cc.cmp(reg, ::asmjit::imm(std::get<int>(operand))); break;
 			case 2: cc.cmp(reg, std::get<::asmjit::x86::Mem>(operand)); break;
+
+			default:
+				__builtin_trap(); //FIXME: crash
 		}
 	}
 	void setbyte(::asmjit::x86::Gp &dest) const {
@@ -66,6 +69,9 @@ struct Condition<::asmjit::x86::Compiler> {
 			case ConditionFlag::be: cc.setbe(dest); break;
 			case ConditionFlag::a : cc.seta (dest); break;
 			case ConditionFlag::ae: cc.setae(dest); break;
+
+			default:
+				__builtin_trap(); //FIXME: crash
 		}
 	}
 	void jump(::asmjit::Label label) const {
@@ -80,6 +86,9 @@ struct Condition<::asmjit::x86::Compiler> {
 			case ConditionFlag::be: cc.jbe(label); break;
 			case ConditionFlag::a : cc.ja (label); break;
 			case ConditionFlag::ae: cc.jae(label); break;
+
+			default:
+				__builtin_trap(); //FIXME: crash
 		}
 	}
 };
