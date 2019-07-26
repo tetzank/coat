@@ -18,6 +18,15 @@ namespace coat {
 	void>;
 
 
+template<typename T>
+struct has_custom_base : std::false_type {};
+
+template<typename T>
+struct StructBase;
+
+struct StructBaseEmpty {};
+
+
 template<class CC, typename T>
 struct Struct;
 

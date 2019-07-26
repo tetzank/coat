@@ -31,7 +31,12 @@ constexpr size_t offset_of_v = offset_of<I, Tuple>::value;
 
 
 template<typename T>
-struct Struct<::asmjit::x86::Compiler,T> {
+struct Struct<::asmjit::x86::Compiler,T>
+	: public std::conditional_t<has_custom_base<T>::value,
+								StructBase<Struct<::asmjit::x86::Compiler,T>>,
+								StructBaseEmpty
+			>
+{
 	using F = ::asmjit::x86::Compiler;
 
 	static_assert(std::is_standard_layout_v<T>, "wrapped class needs to have standard layout");

@@ -85,6 +85,15 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Ptr &operator+=(int amount){ cc.add(reg, amount*sizeof(value_type)); return *this; }
 	Ptr &operator-=(int amount){ cc.sub(reg, amount*sizeof(value_type)); return *this; }
 
+	// operators creating temporary virtual registers
+	Value<F,size_t> operator- (const Ptr &other) const {
+		Value<F,size_t> ret(cc, "ret");
+		cc.mov(ret, reg);
+		cc.sub(ret, other.reg);
+		cc.shr(ret, 2);
+		return ret;
+	}
+
 	// pre-increment, post-increment not provided as it creates temporary
 	Ptr &operator++(){ cc.add(reg, sizeof(value_type)); return *this; }
 	// pre-decrement

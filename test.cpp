@@ -5,6 +5,7 @@
 #include "include/Function.h"
 #include "include/ControlFlow.h"
 
+#include "include/pod_vector.h"
 
 
 // generate code, in this case just sum all element in array
@@ -291,6 +292,28 @@ int main(int argc, char **argv){
 		printf("vectorsum llvmjit: %i\n", result);
 		//FIXME: free function
 	}
+
+	pod_vector<int> pod_vec;
+	for(size_t i=0; i<cnt; ++i){
+		pod_vec.push_back(array[i]);
+	}
+	{
+		using func_type = size_t (*)(pod_vector<int>*);
+		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		auto args = fn.getArguments("podvec");
+		auto &vr_podvec = std::get<0>(args);
+		auto vr_size = vr_podvec.size();
+		coat::ret(fn, vr_size);
+
+		// finalize function
+		func_type fnptr = fn.finalize(&asmrt);
+		// execute generated function
+		size_t result = fnptr(&pod_vec);
+		printf("podvec  asmjit: %lu\n", result);
+
+		asmrt.rt.release(fnptr);
+	}
+
 
 	delete[] array;
 
