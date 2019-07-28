@@ -120,7 +120,16 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 
 	//Value &operator~(){ cc.not_(reg); return *this; }
 
-	//TODO: operations
+	// operators creatting temporary
+	Value operator<<(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
+	Value operator>>(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
+	Value operator+ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
+	Value operator- (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
+	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
+	Value operator| (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  |= amount; return tmp; }
+	Value operator^ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
+
+
 	// comparisons
 	Condition<F> operator==(const Value &other) const { return {cc, memreg, other.memreg, ConditionFlag::e};  }
 	Condition<F> operator!=(const Value &other) const { return {cc, memreg, other.memreg, ConditionFlag::ne}; }

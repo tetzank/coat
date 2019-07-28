@@ -99,7 +99,7 @@ void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
 
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
-FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), reg_type<::asmjit::x86::Compiler,Args>... arguments){
+FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_type<::asmjit::x86::Compiler,Args>... arguments){
 	if constexpr(std::is_void_v<R>){
 		::asmjit::FuncCallNode *c = cc.call((uint64_t)(void*)fnptr, ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;
@@ -120,7 +120,7 @@ FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), reg_type<::asmjit:
 }
 
 
-// pointer difference in bytes, no pointer arithmetic (used by operators)
+// pointer difference in bytes, no pointer arithmetic (used by Ptr operators)
 template<typename T>
 Value<::asmjit::x86::Compiler,size_t> distance(::asmjit::x86::Compiler &cc, Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>> &beg, Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>> &end){
 	Value<::asmjit::x86::Compiler,size_t> vr_ret(cc, "distance");

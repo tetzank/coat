@@ -43,6 +43,7 @@ inline llvm::StructType *getLLVMStructTypeImpl(llvm::LLVMContext &ctx, std::inde
 template<typename T>
 inline llvm::StructType *getLLVMStructType(llvm::LLVMContext &ctx){
 	constexpr size_t N = std::tuple_size_v<typename T::types>;
+	// N-1 as macros add trailing void to types tuple
 	return getLLVMStructTypeImpl<typename T::types>(ctx, std::make_index_sequence<N-1>{});
 }
 

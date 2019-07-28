@@ -5,7 +5,12 @@
 namespace coat {
 
 template<typename T>
-struct Struct<::llvm::IRBuilder<>,T> {
+struct Struct<::llvm::IRBuilder<>,T>
+	: public std::conditional_t<has_custom_base<T>::value,
+								StructBase<Struct<::llvm::IRBuilder<>,T>>,
+								StructBaseEmpty
+			>
+{
 	using F = ::llvm::IRBuilder<>;
 
 	static_assert(std::is_standard_layout_v<T>, "wrapped class needs to have standard layout");

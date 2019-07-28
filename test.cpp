@@ -254,6 +254,8 @@ int main(int argc, char **argv){
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 		assemble_getStructElement(fn);
 
+		llvmrt.print("test-triple-dump.ll");
+
 		// finalize function
 		func_type fnptr = fn.finalize(llvmrt);
 		// execute generated function
@@ -293,6 +295,8 @@ int main(int argc, char **argv){
 		//FIXME: free function
 	}
 
+
+	// testing asmjit backend
 	pod_vector<int> pod_vec;
 	for(size_t i=0; i<cnt; ++i){
 		pod_vec.push_back(array[i]);
@@ -328,6 +332,41 @@ int main(int argc, char **argv){
 	}
 	printf("\n");
 
+	// testing llvm backend
+	pod_vec.pop_back();
+	{
+		using func_type = size_t (*)(pod_vector<int>*);
+		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+		auto args = fn.getArguments("podvec");
+		auto &vr_podvec = std::get<0>(args);
+		auto vr_size = vr_podvec.size();
+
+		coat::Value vr_sum(fn, 0, "sum");
+		auto vr_beg = vr_podvec.get_value<0>();
+		auto vr_end = vr_podvec.get_value<1>();
+		coat::for_each(fn, vr_beg, vr_end, [&](auto &vr_ele){
+			vr_sum += vr_ele;
+		});
+		vr_podvec.push_back(vr_sum);
+
+		coat::ret(fn, vr_size);
+
+
+		llvmrt.print("test-podvec-dump.ll");
+
+		// finalize function
+		func_type fnptr = fn.finalize(llvmrt);
+		// execute generated function
+		size_t result = fnptr(&pod_vec);
+		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
+
+		asmrt.rt.release(fnptr);
+	}
+	printf("current elements: ");
+	for(const auto &ele : pod_vec){
+		printf("%i, ", ele);
+	}
+	printf("\n");
 
 	delete[] array;
 

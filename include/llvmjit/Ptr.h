@@ -32,8 +32,13 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64PtrTy(cc.getContext()), nullptr, name); break;
 		}
 	}
+	Ptr(const Ptr &other) : cc(other.cc), memreg(other.memreg) {}
+
 	//FIXME: takes any type
 	Ptr &operator=(llvm::Value *val){ store( val ); return *this; }
+
+	//Ptr &operator=(value_type *value){ store( llvm::Constant ); return *this; }
+	Ptr &operator=(const Ptr &other){ store( other.load() ); return *this; }
 
 	// dereference
 	mem_type operator*(){
@@ -70,6 +75,18 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	Ptr &operator-=(int amount){
 		store( cc.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), -amount)) );
 		return *this;
+	}
+
+	// operators creating temporary
+	Value<F,size_t> operator- (const Ptr &other) const {
+		Value<F,size_t> ret(cc, "ret");
+		llvm::Value *int_reg = cc.CreatePtrToInt(load(), llvm::Type::getInt64Ty(cc.getContext()));
+		llvm::Value *int_other = cc.CreatePtrToInt(other.load(), llvm::Type::getInt64Ty(cc.getContext()));
+		llvm::Value *bytes = cc.CreateSub(int_reg, int_other);
+		// compilers do arithmetic shift...
+		llvm::Value *elements = cc.CreateAShr(bytes, clog2(sizeof(value_type)), "", true);
+		ret.store(elements);
+		return ret;
 	}
 
 	// pre-increment, post-increment not provided as it creates temporary

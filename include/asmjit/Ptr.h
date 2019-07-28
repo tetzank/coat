@@ -98,7 +98,7 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		Value<F,size_t> ret(cc, "ret");
 		cc.mov(ret, reg);
 		cc.sub(ret, other.reg);
-		cc.shr(ret, 2);
+		cc.sar(ret, clog2(sizeof(value_type))); // compilers also do arithmetic shift...
 		return ret;
 	}
 

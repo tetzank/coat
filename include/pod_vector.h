@@ -14,10 +14,23 @@ class pod_vector {
 	static_assert(std::is_pod_v<T>, "pod_vector only supports pod types");
 
 private:
+//FIXME: cannot use macros _and_ make members private
+#if 0
+#define MEMBERS(x) \
+	x(T*, start) \
+	x(T*, finish) \
+	x(T*, capend)
+
+DECLARE(MEMBERS)
+#undef MEMBERS
+
+	template<class CC, typename Type>
+	friend struct Struct;
+#endif
 	T *start, *finish, *capend;
 
 public:
-	using types = std::tuple<T*,T*,T*>;
+	using types = std::tuple<T*,T*,T*,void>; //FIXME: trailing void required because of macros
 	using value_type = T;
 
 	pod_vector(){
@@ -144,7 +157,7 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 			auto vr_size = coat::distance(self.cc, vr_start, vr_finish);
 			// call realloc with increased size
 			using realloc_type = T *(*)(T*,size_t); // fix realloc void* type issue, coat has no cast
-			auto vr_newstart = coat::FunctionCall(self.cc, (realloc_type)realloc, vr_start, vr_size << 1);
+			auto vr_newstart = coat::FunctionCall(self.cc, (realloc_type)realloc, "realloc", vr_start, vr_size << 1);
 			// assign members of vector new values after realloc
 			self.template get_reference<0>() = vr_newstart;
 			vr_finish = vr_newstart += vr_size;

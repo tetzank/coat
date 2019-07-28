@@ -141,10 +141,13 @@ void for_each(llvm::IRBuilder<> &cc, Ptr &begin, const Ptr &end, Fn &&body){
 	cc.SetInsertPoint(bb_after);
 }
 
+//FIXME: requires that the function is exported as a dynamic symbol
+//       on linux this is only the case when linking a shared library
+//       for an executable, -rdynamic flag has to be used during linking
 
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCallImpl(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_type<::llvm::IRBuilder<>,Args>... arguments){
 	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
 	llvm::Function *fn = currentModule->getFunction(name);
 	if(!fn){
@@ -160,7 +163,7 @@ FunctionCallImpl(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, re
 		fn->setCallingConv(llvm::CallingConv::C);
 	}
 	// call
-	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments... });
+	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments.load()... });
 
 	if constexpr(!std::is_void_v<R>){
 		// return value
@@ -168,6 +171,18 @@ FunctionCallImpl(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, re
 		ret = call_inst;
 		return ret;
 	}
+}
+
+
+// pointer difference in bytes, no pointer arithmetic (used by Ptr operators)
+template<typename T>
+Value<::llvm::IRBuilder<>,size_t> distance(::llvm::IRBuilder<> &cc, Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,T>> &beg, Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,T>> &end){
+	Value<::llvm::IRBuilder<>,size_t> vr_ret(cc, "distance");
+	llvm::Value *int_reg = cc.CreatePtrToInt(beg.load(), llvm::Type::getInt64Ty(cc.getContext()));
+	llvm::Value *int_other = cc.CreatePtrToInt(end.load(), llvm::Type::getInt64Ty(cc.getContext()));
+	llvm::Value *bytes = cc.CreateSub(int_reg, int_other);
+	vr_ret.store(bytes);
+	return vr_ret;
 }
 
 
