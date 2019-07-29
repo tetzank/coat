@@ -117,10 +117,15 @@ int main(int argc, char **argv){
 
 
 	// init JIT backends
+#ifdef ENABLE_ASMJIT
 	coat::runtimeAsmjit asmrt;
+#endif
+#ifdef ENABLE_LLVMJIT
 	coat::runtimellvmjit::initTarget();
 	coat::runtimellvmjit llvmrt;
+#endif
 
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)();
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -139,6 +144,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = int (*)();
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -156,7 +163,9 @@ int main(int argc, char **argv){
 		printf("initialization test: llvmjit; result: %i\n", result);
 		//FIXME: free function
 	}
+#endif
 
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -170,6 +179,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -182,7 +193,9 @@ int main(int argc, char **argv){
 		printf("result with for_each and llvmjit: %i\n", result);
 		//FIXME: free function
 	}
+#endif
 
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -196,6 +209,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -208,7 +223,9 @@ int main(int argc, char **argv){
 		printf("result with loop_while and llvmjit: %i\n", result);
 		//FIXME: free function
 	}
+#endif
 
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -222,6 +239,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -234,8 +253,10 @@ int main(int argc, char **argv){
 		printf("result with loop_while and llvmjit: %i\n", result);
 		//FIXME: free function
 	}
+#endif
 
 	triple t{23, 42, 88};
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = uint32_t (*)(triple*);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -249,6 +270,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = uint32_t (*)(triple*);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -263,12 +286,14 @@ int main(int argc, char **argv){
 		printf("getStructElement llvmjit: %i\n", result);
 		//FIXME: free function
 	}
+#endif
 
 	std::vector<int> vec;
 	vec.reserve(cnt);
 	for(size_t i=0; i<cnt; ++i){
 		vec.push_back(array[i]);
 	}
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(wrapped_vector<int>*);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -282,6 +307,8 @@ int main(int argc, char **argv){
 
 		asmrt.rt.release(fnptr);
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = int (*)(wrapped_vector<int>*);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -294,13 +321,14 @@ int main(int argc, char **argv){
 		printf("vectorsum llvmjit: %i\n", result);
 		//FIXME: free function
 	}
-
+#endif
 
 	// testing asmjit backend
 	pod_vector<int> pod_vec;
 	for(size_t i=0; i<cnt; ++i){
 		pod_vec.push_back(array[i]);
 	}
+#ifdef ENABLE_ASMJIT
 	{
 		using func_type = size_t (*)(pod_vector<int>*);
 		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
@@ -325,15 +353,18 @@ int main(int argc, char **argv){
 		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
 
 		asmrt.rt.release(fnptr);
+
+		printf("current elements: ");
+		for(const auto &ele : pod_vec){
+			printf("%i, ", ele);
+		}
+		printf("\n");
 	}
-	printf("current elements: ");
-	for(const auto &ele : pod_vec){
-		printf("%i, ", ele);
-	}
-	printf("\n");
+#endif
 
 	// testing llvm backend
-	pod_vec.pop_back();
+	pod_vec.resize(cnt);
+#ifdef ENABLE_LLVMJIT
 	{
 		using func_type = size_t (*)(pod_vector<int>*);
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
@@ -359,14 +390,15 @@ int main(int argc, char **argv){
 		// execute generated function
 		size_t result = fnptr(&pod_vec);
 		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
+		//FIXME: free function
 
-		asmrt.rt.release(fnptr);
+		printf("current elements: ");
+		for(const auto &ele : pod_vec){
+			printf("%i, ", ele);
+		}
+		printf("\n");
 	}
-	printf("current elements: ");
-	for(const auto &ele : pod_vec){
-		printf("%i, ", ele);
-	}
-	printf("\n");
+#endif
 
 	delete[] array;
 

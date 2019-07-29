@@ -41,6 +41,15 @@ find_library(LLVM_LIBRARIES
 include_directories(${LLVM_INCLUDE_DIR})
 
 
+option(ENABLE_ASMJIT "enable AsmJit backend" ON)
+option(ENABLE_LLVMJIT "enable LLVM JIT backend" ON)
+
 add_executable(test test.cpp)
-target_compile_definitions(test PRIVATE "ENABLE_ASMJIT" PRIVATE "ENABLE_LLVMJIT")
-target_link_libraries(test ${ASMJIT_LIBRARIES} ${LLVM_LIBRARIES})
+if(ENABLE_ASMJIT)
+	target_compile_definitions(test PRIVATE "ENABLE_ASMJIT")
+	target_link_libraries(test ${ASMJIT_LIBRARIES})
+endif()
+if(ENABLE_LLVMJIT)
+	target_compile_definitions(test PRIVATE "ENABLE_LLVMJIT")
+	target_link_libraries(test ${LLVM_LIBRARIES})
+endif()
