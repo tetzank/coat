@@ -8,6 +8,7 @@ namespace coat {
 #define ENUM_MEMBER(ty, id) member_##id,
 #define TYPE_MEMBER(ty, id) ty,
 
+// declares (public) members, enum and tuple containing types
 #define DECLARE(members)      \
 	members(STRUCT_MEMBER)    \
 	enum member_ids : int {   \
@@ -15,6 +16,18 @@ namespace coat {
 	};                        \
 	using types = std::tuple< \
 		members(TYPE_MEMBER)  \
+	void>;
+
+// declares private members and public enum and types
+#define DECLARE_PRIVATE(members) \
+private:                         \
+	members(STRUCT_MEMBER)       \
+public:                          \
+	enum member_ids : int {      \
+		members(ENUM_MEMBER)     \
+	};                           \
+	using types = std::tuple<    \
+		members(TYPE_MEMBER)     \
 	void>;
 
 

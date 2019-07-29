@@ -13,24 +13,15 @@ class pod_vector {
 	//FIXME: way too strict, every relocatable object works
 	static_assert(std::is_pod_v<T>, "pod_vector only supports pod types");
 
-private:
-//FIXME: cannot use macros _and_ make members private
-#if 0
 #define MEMBERS(x) \
 	x(T*, start) \
 	x(T*, finish) \
 	x(T*, capend)
 
-DECLARE(MEMBERS)
+DECLARE_PRIVATE(MEMBERS)
 #undef MEMBERS
 
-	template<class CC, typename Type>
-	friend struct Struct;
-#endif
-	T *start, *finish, *capend;
-
 public:
-	using types = std::tuple<T*,T*,T*,void>; //FIXME: trailing void required because of macros
 	using value_type = T;
 
 	pod_vector(){
@@ -145,34 +136,36 @@ struct has_custom_base<pod_vector<T,I>> : std::true_type {};
 
 template<class CC, typename T, size_t I>
 struct StructBase<Struct<CC,pod_vector<T,I>>> {
+	using PV = pod_vector<T,I>;
+
 	void push_back(Value<CC,T> &value){
-		auto &self = static_cast<Struct<CC,pod_vector<T,I>>&>(*this);
+		auto &self = static_cast<Struct<CC,PV>&>(*this);
 		//FIXME: accessed each time
-		auto vr_finish = self.template get_value<1>();
-		auto vr_capend = self.template get_value<2>();
+		auto vr_finish = self.template get_value<PV::member_finish>();
+		auto vr_capend = self.template get_value<PV::member_capend>();
 		// grow in size if full
 		coat::if_then(self.cc, vr_finish == vr_capend, [&]{
-			auto vr_start = self.template get_value<0>();
+			auto vr_start = self.template get_value<PV::member_start>();
 			// get size in bytes
 			auto vr_size = coat::distance(self.cc, vr_start, vr_finish);
 			// call realloc with increased size
 			using realloc_type = T *(*)(T*,size_t); // fix realloc void* type issue, coat has no cast
 			auto vr_newstart = coat::FunctionCall(self.cc, (realloc_type)realloc, "realloc", vr_start, vr_size << 1);
 			// assign members of vector new values after realloc
-			self.template get_reference<0>() = vr_newstart;
+			self.template get_reference<PV::member_start>() = vr_newstart;
 			vr_finish = vr_newstart += vr_size;
-			self.template get_reference<2>() = vr_newstart += vr_size;
+			self.template get_reference<PV::member_capend>() = vr_newstart += vr_size;
 		});
 		*vr_finish = value;
 		++vr_finish;
-		self.template get_reference<1>() = vr_finish;
+		self.template get_reference<PV::member_finish>() = vr_finish;
 	}
 
 	Value<CC,size_t> size() {
-		auto &self = static_cast<Struct<CC,pod_vector<T,I>>&>(*this);
+		auto &self = static_cast<Struct<CC,PV>&>(*this);
 		//FIXME: accessed each time
-		auto vr_start = self.template get_value<0>();
-		auto vr_finish = self.template get_value<1>();
+		auto vr_start = self.template get_value<PV::member_start>();
+		auto vr_finish = self.template get_value<PV::member_finish>();
 		return vr_finish - vr_start;
 	}
 };
