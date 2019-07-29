@@ -141,6 +141,31 @@ void for_each(llvm::IRBuilder<> &cc, Ptr &begin, const Ptr &end, Fn &&body){
 	cc.SetInsertPoint(bb_after);
 }
 
+template<class T, typename Fn>
+void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
+	llvm::Function *fn = bb_current->getParent();
+	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.getContext(), "foreach", fn);
+	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
+
+	auto begin = container.begin();
+	auto end = container.end();
+
+	// check if even one iteration
+	jump(cc, begin == end, bb_after, bb_loop);
+
+	// loop over all elements
+	cc.SetInsertPoint(bb_loop);
+		auto vr_ele = *begin;
+		body(vr_ele);
+		++begin;
+	jump(cc, begin != end, bb_loop, bb_after);
+
+	// label after loop body
+	cc.SetInsertPoint(bb_after);
+}
+
+
 //FIXME: requires that the function is exported as a dynamic symbol
 //       on linux this is only the case when linking a shared library
 //       for an executable, -rdynamic flag has to be used during linking

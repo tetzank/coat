@@ -96,6 +96,28 @@ void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
 	cc.bind(l_exit);
 }
 
+template<class T, typename Fn>
+void for_each(::asmjit::x86::Compiler &cc, const T &container, Fn &&body){
+	::asmjit::Label l_loop = cc.newLabel();
+	::asmjit::Label l_exit = cc.newLabel();
+
+	auto begin = container.begin();
+	auto end = container.end();
+
+	// check if even one iteration
+	jump(cc, begin == end, l_exit);
+
+	// loop over all elements
+	cc.bind(l_loop);
+		auto vr_ele = *begin;
+		body(vr_ele);
+		++begin;
+	jump(cc, begin != end, l_loop);
+
+	// label after loop body
+	cc.bind(l_exit);
+}
+
 
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>

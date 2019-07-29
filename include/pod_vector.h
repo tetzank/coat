@@ -138,6 +138,15 @@ template<class CC, typename T, size_t I>
 struct StructBase<Struct<CC,pod_vector<T,I>>> {
 	using PV = pod_vector<T,I>;
 
+	auto begin() const {
+		auto &self = static_cast<const Struct<CC,PV>&>(*this);
+		return self.template get_value<PV::member_start>();
+	}
+	auto end() const {
+		auto &self = static_cast<const Struct<CC,PV>&>(*this);
+		return self.template get_value<PV::member_finish>();
+	}
+
 	void push_back(Value<CC,T> &value){
 		auto &self = static_cast<Struct<CC,PV>&>(*this);
 		//FIXME: accessed each time

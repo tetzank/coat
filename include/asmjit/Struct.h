@@ -38,6 +38,7 @@ struct Struct<::asmjit::x86::Compiler,T>
 			>
 {
 	using F = ::asmjit::x86::Compiler;
+	using struct_type = T;
 
 	static_assert(std::is_standard_layout_v<T>, "wrapped class needs to have standard layout");
 
@@ -75,7 +76,7 @@ struct Struct<::asmjit::x86::Compiler,T>
 	}
 
 	template<int I>
-	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value(){
+	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value() const {
 		wrapper_type<F,std::tuple_element_t<I, typename T::types>> ret(cc);
 		if constexpr(std::is_arithmetic_v<std::remove_pointer_t<std::tuple_element_t<I, typename T::types>>>){
 #if 0

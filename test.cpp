@@ -337,9 +337,7 @@ int main(int argc, char **argv){
 		auto vr_size = vr_podvec.size();
 
 		coat::Value vr_sum(fn, 0, "sum");
-		auto vr_beg = vr_podvec.get_value<0>();
-		auto vr_end = vr_podvec.get_value<1>();
-		coat::for_each(fn, vr_beg, vr_end, [&](auto &vr_ele){
+		coat::for_each(fn, vr_podvec, [&](auto &vr_ele){
 			vr_sum += vr_ele;
 		});
 		vr_podvec.push_back(vr_sum);
@@ -373,9 +371,7 @@ int main(int argc, char **argv){
 		auto vr_size = vr_podvec.size();
 
 		coat::Value vr_sum(fn, 0, "sum");
-		auto vr_beg = vr_podvec.get_value<0>();
-		auto vr_end = vr_podvec.get_value<1>();
-		coat::for_each(fn, vr_beg, vr_end, [&](auto &vr_ele){
+		coat::for_each(fn, vr_podvec, [&](auto &vr_ele){
 			vr_sum += vr_ele;
 		});
 		vr_podvec.push_back(vr_sum);
