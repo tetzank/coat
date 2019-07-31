@@ -4,8 +4,8 @@
 #include <cstdlib>
 #include <cassert>
 
-#include "Struct.h"
-#include "ControlFlow.h"
+#include "coat/Struct.h"
+#include "coat/ControlFlow.h"
 
 
 template<typename T, size_t initial_size=1024>

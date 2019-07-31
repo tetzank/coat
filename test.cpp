@@ -2,10 +2,10 @@
 #include <cstdio>
 #include <vector>
 
-#include "include/Function.h"
-#include "include/ControlFlow.h"
+#include "coat/Function.h"
+#include "coat/ControlFlow.h"
 
-#include "include/pod_vector.h"
+#include "coat/datastructs/pod_vector.h"
 
 
 // generate code, in this case just sum all element in array
