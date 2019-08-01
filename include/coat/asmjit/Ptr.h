@@ -93,6 +93,11 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		return *this;
 	}
 
+	Ptr &addByteOffset(const value_base_type &value){
+		cc.lea(reg, ::asmjit::x86::ptr(reg, value.reg));
+		return *this;
+	}
+
 	// operators creating temporary virtual registers
 	Value<F,size_t> operator- (const Ptr &other) const {
 		Value<F,size_t> ret(cc, "ret");

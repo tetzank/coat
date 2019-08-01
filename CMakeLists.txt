@@ -45,6 +45,7 @@ include_directories(${LLVM_INCLUDE_DIR})
 option(ENABLE_ASMJIT "enable AsmJit backend" ON)
 option(ENABLE_LLVMJIT "enable LLVM JIT backend" ON)
 
+
 add_executable(test test.cpp)
 if(ENABLE_ASMJIT)
 	target_compile_definitions(test PRIVATE "ENABLE_ASMJIT")
@@ -53,4 +54,11 @@ endif()
 if(ENABLE_LLVMJIT)
 	target_compile_definitions(test PRIVATE "ENABLE_LLVMJIT")
 	target_link_libraries(test ${LLVM_LIBRARIES})
+endif()
+
+
+add_executable(filter filter.cpp)
+if(ENABLE_ASMJIT)
+	target_compile_definitions(filter PRIVATE "ENABLE_ASMJIT")
+	target_link_libraries(filter ${ASMJIT_LIBRARIES})
 endif()

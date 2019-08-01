@@ -128,6 +128,7 @@ public:
 };
 
 
+#if defined(ENABLE_ASMJIT) || defined(ENABLE_LLVMJIT)
 namespace coat {
 
 template<typename T, size_t I>
@@ -162,8 +163,10 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 			auto vr_newstart = coat::FunctionCall(self.cc, (realloc_type)realloc, "realloc", vr_start, vr_size << 1);
 			// assign members of vector new values after realloc
 			self.template get_reference<PV::member_start>() = vr_newstart;
-			vr_finish = vr_newstart += vr_size;
-			self.template get_reference<PV::member_capend>() = vr_newstart += vr_size;
+			//vr_finish = vr_newstart += vr_size; //FIXME: does ptr arithmetic
+			vr_finish = vr_newstart.addByteOffset(vr_size);
+			//self.template get_reference<PV::member_capend>() = vr_newstart += vr_size; //FIXME: does ptr arithmetic
+			self.template get_reference<PV::member_capend>() = vr_newstart.addByteOffset(vr_size);
 		});
 		*vr_finish = value;
 		++vr_finish;
@@ -180,5 +183,6 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 };
 
 }
+#endif
 
 #endif
