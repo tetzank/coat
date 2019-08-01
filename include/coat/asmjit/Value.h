@@ -319,7 +319,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 
 // deduction guides
 template<typename T> Value(::asmjit::x86::Compiler&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
-template<typename FnPtr, typename T> Value(Function<runtimeAsmjit,FnPtr>&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
+template<typename FnPtr, typename T> Value(Function<runtimeasmjit,FnPtr>&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 
 } // namespace
 

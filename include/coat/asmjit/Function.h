@@ -8,7 +8,7 @@
 namespace coat {
 
 template<typename R, typename ...Args>
-struct Function<runtimeAsmjit,R(*)(Args...)>{
+struct Function<runtimeasmjit,R(*)(Args...)>{
 	using F = ::asmjit::x86::Compiler;
 	using func_type = R (*)(Args...);
 	using return_type = R;
@@ -18,7 +18,7 @@ struct Function<runtimeAsmjit,R(*)(Args...)>{
 
 	::asmjit::FileLogger logger;
 
-	Function(runtimeAsmjit *runtime){
+	Function(runtimeasmjit *runtime){
 		code.init(runtime->rt.codeInfo());
 #if 0
 		logger.setFile(stdout);
@@ -56,7 +56,7 @@ struct Function<runtimeAsmjit,R(*)(Args...)>{
 	}
 
 	func_type finalize(
-		runtimeAsmjit *runtime,
+		runtimeasmjit *runtime,
 #ifdef PROFILING
 		const char *fname="COAT_Function_AsmJit"
 #else

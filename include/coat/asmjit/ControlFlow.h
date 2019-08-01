@@ -17,8 +17,8 @@ inline void ret(::asmjit::x86::Compiler &cc){
 	cc.ret();
 }
 template<typename FnPtr, typename VReg>
-inline void ret(Function<runtimeAsmjit,FnPtr> &ctx, VReg &reg){
-	static_assert(std::is_same_v<typename Function<runtimeAsmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
+inline void ret(Function<runtimeasmjit,FnPtr> &ctx, VReg &reg){
+	static_assert(std::is_same_v<typename Function<runtimeasmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
 	ctx.cc.ret(reg);
 }
 

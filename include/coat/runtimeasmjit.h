@@ -14,16 +14,16 @@ public:
 };
 
 
-struct runtimeAsmjit{
+struct runtimeasmjit{
 	asmjit::JitRuntime rt;
 	MyErrorHandler errorHandler;
 #ifdef PROFILING
 	asmjit::JitDump jd;
 
-	runtimeAsmjit(){
+	runtimeasmjit(){
 		jd.init();
 	}
-	~runtimeAsmjit(){
+	~runtimeasmjit(){
 		jd.close();
 	}
 #endif

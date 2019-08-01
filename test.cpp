@@ -118,7 +118,7 @@ int main(int argc, char **argv){
 
 	// init JIT backends
 #ifdef ENABLE_ASMJIT
-	coat::runtimeAsmjit asmrt;
+	coat::runtimeasmjit asmrt;
 #endif
 #ifdef ENABLE_LLVMJIT
 	coat::runtimellvmjit::initTarget();
@@ -128,7 +128,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)();
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		coat::Value vr_val3(fn, 0, "val");
 		coat::Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
 		vr_val = 0;
@@ -168,7 +168,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		assemble_sum_foreach(fn);
 
 		// finalize function
@@ -198,7 +198,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		assemble_sum_counter(fn);
 
 		// finalize function
@@ -228,7 +228,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		assemble_condsum_loop(fn);
 
 		// finalize function
@@ -259,7 +259,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = uint32_t (*)(triple*);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		assemble_getStructElement(fn);
 
 		// finalize function
@@ -296,7 +296,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(wrapped_vector<int>*);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		assemble_vectorsum(fn);
 
 		// finalize function
@@ -331,7 +331,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = size_t (*)(pod_vector<int>*);
-		coat::Function<coat::runtimeAsmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
 		auto args = fn.getArguments("podvec");
 		auto &vr_podvec = std::get<0>(args);
 		auto vr_size = vr_podvec.size();
