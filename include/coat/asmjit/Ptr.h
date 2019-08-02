@@ -86,14 +86,15 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		return res;
 	}
 
-	Ptr &operator+=(int amount){ cc.add(reg, amount*sizeof(value_type)); return *this; }
-	Ptr &operator-=(int amount){ cc.sub(reg, amount*sizeof(value_type)); return *this; }
 	Ptr &operator+=(const value_base_type &value){
 		cc.lea(reg, ::asmjit::x86::ptr(reg, value.reg, clog2(sizeof(value_type))));
 		return *this;
 	}
+	Ptr &operator+=(int amount){ cc.add(reg, amount*sizeof(value_type)); return *this; }
+	Ptr &operator-=(int amount){ cc.sub(reg, amount*sizeof(value_type)); return *this; }
 
-	Ptr &addByteOffset(const value_base_type &value){
+	// like "+=" without pointer arithmetic
+	Ptr &addByteOffset(const value_base_type &value){ //TODO: any integer value should be possible as operand
 		cc.lea(reg, ::asmjit::x86::ptr(reg, value.reg));
 		return *this;
 	}

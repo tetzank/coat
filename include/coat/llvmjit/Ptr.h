@@ -77,6 +77,15 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 		return *this;
 	}
 
+	// like "+=" without pointer arithmetic
+	Ptr &addByteOffset(const value_base_type &value){ //TODO: any integer value should be possible as operand
+		llvm::Value *int_reg = cc.CreatePtrToInt(load(), llvm::Type::getInt64Ty(cc.getContext()));
+		llvm::Value *int_value = cc.CreatePtrToInt(value.load(), llvm::Type::getInt64Ty(cc.getContext()));
+		llvm::Value *int_sum = cc.CreateAdd(int_reg, int_value);
+		store( cc.CreateIntToPtr(int_sum, type()) );
+		return *this;
+	}
+
 	// operators creating temporary
 	Value<F,size_t> operator- (const Ptr &other) const {
 		Value<F,size_t> ret(cc, "ret");
