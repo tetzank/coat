@@ -203,9 +203,9 @@ FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_ty
 template<typename T>
 Value<::llvm::IRBuilder<>,size_t> distance(::llvm::IRBuilder<> &cc, Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,T>> &beg, Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,T>> &end){
 	Value<::llvm::IRBuilder<>,size_t> vr_ret(cc, "distance");
-	llvm::Value *int_reg = cc.CreatePtrToInt(beg.load(), llvm::Type::getInt64Ty(cc.getContext()));
-	llvm::Value *int_other = cc.CreatePtrToInt(end.load(), llvm::Type::getInt64Ty(cc.getContext()));
-	llvm::Value *bytes = cc.CreateSub(int_reg, int_other);
+	llvm::Value *int_beg = cc.CreatePtrToInt(beg.load(), llvm::Type::getInt64Ty(cc.getContext()));
+	llvm::Value *int_end = cc.CreatePtrToInt(end.load(), llvm::Type::getInt64Ty(cc.getContext()));
+	llvm::Value *bytes = cc.CreateSub(int_end, int_beg);
 	vr_ret.store(bytes);
 	return vr_ret;
 }

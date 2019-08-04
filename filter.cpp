@@ -109,8 +109,12 @@ using Ctx_llvmjit = CodegenContext<llvm::IRBuilder<>>;
 // returns number of results
 //using codegen_func_type = uint64_t (*)(uint64_t,uint64_t,uint64_t*);
 using codegen_func_type = void (*)();
+#ifdef ENABLE_ASMJIT
 using Fn_asmjit = coat::Function<coat::runtimeasmjit,codegen_func_type>;
-//using Fn_llvmjit = coat::Function<coat::runtimellvmjit,codegen_func_type>;
+#endif
+#ifdef ENABLE_LLVMJIT
+using Fn_llvmjit = coat::Function<coat::runtimellvmjit,codegen_func_type>;
+#endif
 
 
 class Operator{
@@ -131,9 +135,11 @@ public:
 	virtual void execute(uint64_t rowid)=0;
 
 	// code generation with coat, for each backend, chosen at runtime
+#ifdef ENABLE_ASMJIT
 	virtual void codegen(Fn_asmjit &fn, coat::Value<asmjit::x86::Compiler,uint64_t> &rowid)=0;
-#if 0
-	virtual void codegen(Fn_llvmjit &fn, Ctx_llvmjit &ctx)=0;
+#endif
+#ifdef ENABLE_LLVMJIT
+	virtual void codegen(Fn_llvmjit &fn, coat::Value<llvm::IRBuilder<>,uint64_t> &rowid)=0;
 #endif
 };
 
@@ -160,9 +166,11 @@ public:
 		}
 	}
 
+#ifdef ENABLE_ASMJIT
 	void codegen(Fn_asmjit &fn, coat::Value<asmjit::x86::Compiler,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
-#if 0
-	void codegen(Fn_llvmjit &fn, Ctx_llvmjit &ctx) override { codegen_impl(fn, ctx); }
+#endif
+#ifdef ENABLE_LLVMJIT
+	void codegen(Fn_llvmjit &fn, coat::Value<llvm::IRBuilder<>,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
 #endif
 };
 
@@ -252,9 +260,11 @@ public:
 		}
 	}
 
+#ifdef ENABLE_ASMJIT
 	void codegen(Fn_asmjit &fn, coat::Value<asmjit::x86::Compiler,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
-#if 0
-	void codegen(Fn_llvmjit &fn, Ctx_llvmjit &ctx) override { codegen_impl(fn, ctx); }
+#endif
+#ifdef ENABLE_LLVMJIT
+	void codegen(Fn_llvmjit &fn, coat::Value<llvm::IRBuilder<>,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
 #endif
 };
 
@@ -275,9 +285,11 @@ public:
 		results.emplace_back(rowid);
 	}
 
+#ifdef ENABLE_ASMJIT
 	void codegen(Fn_asmjit &fn, coat::Value<asmjit::x86::Compiler,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
-#if 0
-	void codegen(Fn_llvmjit &fn, Ctx_llvmjit &ctx) override { codegen_impl(fn, ctx); }
+#endif
+#ifdef ENABLE_LLVMJIT
+	void codegen(Fn_llvmjit &fn, coat::Value<llvm::IRBuilder<>,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
 #endif
 
 	size_t getResultSize() const {
@@ -303,7 +315,7 @@ public:
 
 int main(int argc, char **argv){
 	if(argc == 1){
-		printf("usage: %s [-t|-a] relation_file filer...\n", argv[0]);
+		printf("usage: %s [-t|-a|-l] relation_file filer...\n", argv[0]);
 		return 0;
 	}
 
@@ -324,6 +336,7 @@ int main(int argc, char **argv){
 	op->setNext(proj);
 
 	if(argv[1][1] == 't'){
+		puts("tuple-at-a-time");
 		auto t_start = std::chrono::high_resolution_clock::now();
 
 		// run
@@ -332,8 +345,10 @@ int main(int argc, char **argv){
 		auto t_end = std::chrono::high_resolution_clock::now();
 		printf("time: %12.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
 		printf("results size: %lu\n", proj->getResultSize());
+#ifdef ENABLE_ASMJIT
 	}else if(argv[1][1] == 'a'){
-		// init backends
+		puts("asmjit backend");
+		// init backend
 		coat::runtimeasmjit asmrt;
 
 		coat::Function<coat::runtimeasmjit,codegen_func_type> fn(&asmrt);
@@ -353,6 +368,37 @@ int main(int argc, char **argv){
 		printf("results size: %lu\n", proj->getResultSize());
 
 		asmrt.rt.release(fnptr);
+#endif
+#ifdef ENABLE_LLVMJIT
+	}else if(argv[1][1] == 'l'){
+		puts("llvm backend");
+		// init backend
+		coat::runtimellvmjit::initTarget();
+		coat::runtimellvmjit llvmrt;
+
+		coat::Function<coat::runtimellvmjit,codegen_func_type> fn(llvmrt);
+		{
+			coat::Value rowid(fn, 0UL, "rowid");
+			scan->codegen(fn, rowid);
+			coat::ret(fn);
+		}
+		llvmrt.print("filter.ll");
+		llvmrt.verifyFunctions();
+		llvmrt.setOptLevel(2);
+		llvmrt.optimize();
+		llvmrt.print("filter_opt.ll");
+		llvmrt.verifyFunctions();
+		// finalize function
+		codegen_func_type fnptr = fn.finalize(llvmrt);
+
+		auto t_start = std::chrono::high_resolution_clock::now();
+		// execute generated function
+		fnptr();
+		auto t_end = std::chrono::high_resolution_clock::now();
+		printf("time: %12.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
+		printf("results size: %lu\n", proj->getResultSize());
+		//FIXME: free function
+#endif
 	}
 
 	delete scan;

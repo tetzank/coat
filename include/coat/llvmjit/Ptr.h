@@ -37,7 +37,11 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	//FIXME: takes any type
 	Ptr &operator=(llvm::Value *val){ store( val ); return *this; }
 
-	//Ptr &operator=(value_type *value){ store( llvm::Constant ); return *this; }
+	Ptr &operator=(value_type *value){
+		llvm::Constant *int_val = llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.getContext()), (uint64_t)value);
+		store( cc.CreateIntToPtr(int_val, type()) );
+		return *this;
+	}
 	Ptr &operator=(const Ptr &other){ store( other.load() ); return *this; }
 
 	// dereference
