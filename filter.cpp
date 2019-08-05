@@ -351,6 +351,7 @@ int main(int argc, char **argv){
 		// init backend
 		coat::runtimeasmjit asmrt;
 
+		auto t_start = std::chrono::high_resolution_clock::now();
 		coat::Function<coat::runtimeasmjit,codegen_func_type> fn(&asmrt);
 		{
 			coat::Value rowid(fn, 0UL, "rowid");
@@ -360,11 +361,17 @@ int main(int argc, char **argv){
 		// finalize function
 		codegen_func_type fnptr = fn.finalize(&asmrt);
 
-		auto t_start = std::chrono::high_resolution_clock::now();
+		auto t_codegen_done = std::chrono::high_resolution_clock::now();
+
 		// execute generated function
 		fnptr();
+
 		auto t_end = std::chrono::high_resolution_clock::now();
-		printf("time: %12.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
+		printf("codegen: %12.f us\nexecute: %12.f us\n  total: %12.2f us\n",
+			std::chrono::duration<double, std::micro>( t_codegen_done - t_start).count(),
+			std::chrono::duration<double, std::micro>( t_end - t_codegen_done).count(),
+			std::chrono::duration<double, std::micro>( t_end - t_start).count()
+		);
 		printf("results size: %lu\n", proj->getResultSize());
 
 		asmrt.rt.release(fnptr);
@@ -375,27 +382,36 @@ int main(int argc, char **argv){
 		// init backend
 		coat::runtimellvmjit::initTarget();
 		coat::runtimellvmjit llvmrt;
+		llvmrt.setOptLevel(2);
 
+		auto t_start = std::chrono::high_resolution_clock::now();
 		coat::Function<coat::runtimellvmjit,codegen_func_type> fn(llvmrt);
 		{
 			coat::Value rowid(fn, 0UL, "rowid");
 			scan->codegen(fn, rowid);
 			coat::ret(fn);
 		}
+		auto t_codegen = std::chrono::high_resolution_clock::now();
 		llvmrt.print("filter.ll");
 		llvmrt.verifyFunctions();
-		llvmrt.setOptLevel(2);
 		llvmrt.optimize();
 		llvmrt.print("filter_opt.ll");
 		llvmrt.verifyFunctions();
 		// finalize function
 		codegen_func_type fnptr = fn.finalize(llvmrt);
 
-		auto t_start = std::chrono::high_resolution_clock::now();
+		auto t_codegen_done = std::chrono::high_resolution_clock::now();
+
 		// execute generated function
 		fnptr();
+
 		auto t_end = std::chrono::high_resolution_clock::now();
-		printf("time: %12.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
+		printf(" codegen: %12.f us\noptimize: %12.f us\n execute: %12.f us\n   total: %12.2f us\n",
+			std::chrono::duration<double, std::micro>( t_codegen - t_start).count(),
+			std::chrono::duration<double, std::micro>( t_codegen_done - t_codegen).count(),
+			std::chrono::duration<double, std::micro>( t_end - t_codegen_done).count(),
+			std::chrono::duration<double, std::micro>( t_end - t_start).count()
+		);
 		printf("results size: %lu\n", proj->getResultSize());
 		//FIXME: free function
 #endif
