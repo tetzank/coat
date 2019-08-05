@@ -26,10 +26,10 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	Ptr(llvm::IRBuilder<> &cc, const char *name="") : cc(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(value_type)){
-			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8PtrTy (cc.getContext()), nullptr, name); break;
-			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16PtrTy(cc.getContext()), nullptr, name); break;
-			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32PtrTy(cc.getContext()), nullptr, name); break;
-			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64PtrTy(cc.getContext()), nullptr, name); break;
+			case 1: memreg = allocateStackVariable(cc, llvm::Type::getInt8PtrTy (cc.getContext()), name); break;
+			case 2: memreg = allocateStackVariable(cc, llvm::Type::getInt16PtrTy(cc.getContext()), name); break;
+			case 4: memreg = allocateStackVariable(cc, llvm::Type::getInt32PtrTy(cc.getContext()), name); break;
+			case 8: memreg = allocateStackVariable(cc, llvm::Type::getInt64PtrTy(cc.getContext()), name); break;
 		}
 	}
 	Ptr(const Ptr &other) : cc(other.cc), memreg(other.memreg) {}

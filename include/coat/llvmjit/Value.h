@@ -23,20 +23,13 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value(llvm::IRBuilder<> &cc, const char *name="") : ValueBase(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(T)){
-			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8Ty (cc.getContext()), nullptr, name); break;
-			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16Ty(cc.getContext()), nullptr, name); break;
-			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32Ty(cc.getContext()), nullptr, name); break;
-			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64Ty(cc.getContext()), nullptr, name); break;
+			case 1: memreg = allocateStackVariable(cc, llvm::Type::getInt8Ty (cc.getContext()), name); break;
+			case 2: memreg = allocateStackVariable(cc, llvm::Type::getInt16Ty(cc.getContext()), name); break;
+			case 4: memreg = allocateStackVariable(cc, llvm::Type::getInt32Ty(cc.getContext()), name); break;
+			case 8: memreg = allocateStackVariable(cc, llvm::Type::getInt64Ty(cc.getContext()), name); break;
 		}
 	}
-	Value(llvm::IRBuilder<> &cc, T val, const char *name="") : ValueBase(cc) {
-		// llvm IR has no types for unsigned/signed integers
-		switch(sizeof(T)){
-			case 1: memreg = cc.CreateAlloca(llvm::Type::getInt8Ty (cc.getContext()), nullptr, name); break;
-			case 2: memreg = cc.CreateAlloca(llvm::Type::getInt16Ty(cc.getContext()), nullptr, name); break;
-			case 4: memreg = cc.CreateAlloca(llvm::Type::getInt32Ty(cc.getContext()), nullptr, name); break;
-			case 8: memreg = cc.CreateAlloca(llvm::Type::getInt64Ty(cc.getContext()), nullptr, name); break;
-		}
+	Value(llvm::IRBuilder<> &cc, T val, const char *name="") : Value(cc, name) {
 		*this = val;
 	}
 

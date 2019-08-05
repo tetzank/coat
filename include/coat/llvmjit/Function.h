@@ -23,7 +23,11 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		jit.reset(); //HACK
 		jit.createFunction(jit_func_type, "func"); //FIXME: function name
 
+		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", jit.jit_func);
 		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", jit.jit_func);
+		cc.SetInsertPoint(bb_prolog);
+		cc.CreateBr(bb_start);
+
 		cc.SetInsertPoint(bb_start);
 	}
 
@@ -62,6 +66,17 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	operator const llvm::IRBuilder<>&() const { return cc; }
 	operator       llvm::IRBuilder<>&()       { return cc; }
 };
+
+// helper function
+static inline llvm::Value *allocateStackVariable(llvm::IRBuilder<> &cc, llvm::Type *ty, const char *name){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
+	llvm::BasicBlock &bb_prolog = bb_current->getParent()->getEntryBlock();
+	llvm::BasicBlock::iterator it = bb_prolog.end();
+	cc.SetInsertPoint(&bb_prolog, --it);
+	llvm::Value *ret = cc.CreateAlloca(ty, nullptr, name);
+	cc.SetInsertPoint(bb_current);
+	return ret;
+}
 
 } // namespace
 

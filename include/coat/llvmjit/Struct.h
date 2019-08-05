@@ -28,7 +28,7 @@ struct Struct<::llvm::IRBuilder<>,T>
 		llvm::StructType *struct_type = getLLVMStructType<T>(cc.getContext());
 		llvm::Type *struct_ptr_type = llvm::PointerType::get(struct_type, 0);
 		// allocate space on stack to store pointer to struct
-		memreg = cc.CreateAlloca(struct_ptr_type, nullptr, name);
+		memreg = allocateStackVariable(cc, struct_ptr_type, name);
 	}
 
 	// load base pointer
