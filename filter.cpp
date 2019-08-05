@@ -315,7 +315,7 @@ public:
 
 int main(int argc, char **argv){
 	if(argc == 1){
-		printf("usage: %s [-t|-a|-l] relation_file filer...\n", argv[0]);
+		printf("usage: %s [ -t | -a | -l[0-3] ] relation_file filer...\n", argv[0]);
 		return 0;
 	}
 
@@ -382,7 +382,15 @@ int main(int argc, char **argv){
 		// init backend
 		coat::runtimellvmjit::initTarget();
 		coat::runtimellvmjit llvmrt;
-		llvmrt.setOptLevel(2);
+		bool optimize=false;
+		if(argv[1][2]){
+			switch(argv[1][2]){
+				case '0': llvmrt.setOptLevel(0); break;
+				case '1': llvmrt.setOptLevel(1); optimize = true; break;
+				case '2': llvmrt.setOptLevel(2); optimize = true; break;
+				case '3': llvmrt.setOptLevel(3); optimize = true; break;
+			}
+		}
 
 		auto t_start = std::chrono::high_resolution_clock::now();
 		coat::Function<coat::runtimellvmjit,codegen_func_type> fn(llvmrt);
@@ -394,9 +402,11 @@ int main(int argc, char **argv){
 		auto t_codegen = std::chrono::high_resolution_clock::now();
 		llvmrt.print("filter.ll");
 		llvmrt.verifyFunctions();
-		llvmrt.optimize();
-		llvmrt.print("filter_opt.ll");
-		llvmrt.verifyFunctions();
+		if(optimize){
+			llvmrt.optimize();
+			llvmrt.print("filter_opt.ll");
+			llvmrt.verifyFunctions();
+		}
 		// finalize function
 		codegen_func_type fnptr = fn.finalize(llvmrt);
 
