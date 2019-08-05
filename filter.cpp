@@ -401,11 +401,17 @@ int main(int argc, char **argv){
 		}
 		auto t_codegen = std::chrono::high_resolution_clock::now();
 		llvmrt.print("filter.ll");
-		llvmrt.verifyFunctions();
+		if(!llvmrt.verifyFunctions()){
+			puts("verification failed. aborting.");
+			exit(EXIT_FAILURE); //FIXME: better error handling
+		}
 		if(optimize){
 			llvmrt.optimize();
 			llvmrt.print("filter_opt.ll");
-			llvmrt.verifyFunctions();
+			if(!llvmrt.verifyFunctions()){
+				puts("verification after optimization failed. aborting.");
+				exit(EXIT_FAILURE); //FIXME: better error handling
+			}
 		}
 		// finalize function
 		codegen_func_type fnptr = fn.finalize(llvmrt);
