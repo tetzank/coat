@@ -6,7 +6,7 @@
 #include "coat/Function.h"
 #include "coat/ControlFlow.h"
 
-#include "coat/datastructs/MultiArrayTable.h"
+#include "coat/datastructs/BitsetTable.h"
 
 
 struct Column{
@@ -35,20 +35,15 @@ Column read_column_file(const char *fname){
 }
 
 
-template<class HT>
-[[gnu::noinline]] void probe_hardcoded(const HT &ht, const Column &col){
+[[gnu::noinline]] void probe_hardcoded(const BitsetTable &bt, const Column &col){
+	// probe phase
 	auto start = std::chrono::high_resolution_clock::now();
 	uint64_t res = 0;
-
 	for(uint64_t v : col.data){
-		auto [itpos, itend] = ht.lookupIterators(v);
-		if(itpos && itend){
-			for(; itpos!=itend; ++itpos){
-				res += v;
-			}
+		if(bt.lookup(v)){
+			res += v;
 		}
 	}
-
 	auto end = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 	printf("probe phase: %lu us\nres: %lu\n", time, res);
@@ -69,8 +64,7 @@ void assemble(Fn &fn){
 		auto vr_key = fn.template getValue<uint64_t>("key");
 		vr_key = vr_ele;
 		//coat::Value vr_key(fn, vr_ele, "key");
-		vr_ht.iterate(vr_key, [&](auto &vr_val){
-			//vr_res += vr_val;
+		vr_ht.check(vr_key, [&]{
 			vr_res += vr_key;
 		});
 	});
@@ -79,11 +73,10 @@ void assemble(Fn &fn){
 #endif
 
 #ifdef ENABLE_ASMJIT
-template<class HT>
-[[gnu::noinline]] void probe_asmjit(const HT &ht, const Column &col){
+[[gnu::noinline]] void probe_asmjit(const BitsetTable &bt, const Column &col){
 	auto start = std::chrono::high_resolution_clock::now();
 
-	using func_type = uint64_t (*)(const uint64_t *col, size_t size, const HT *ht);
+	using func_type = uint64_t (*)(const uint64_t *col, size_t size, const BitsetTable *bt);
 	// init backend
 	coat::runtimeasmjit asmrt;
 	
@@ -92,7 +85,7 @@ template<class HT>
 	// finalize function
 	func_type fnptr = fn.finalize(&asmrt);
 	// execute generated function
-	size_t res = fnptr(col.data.data(), col.data.size(), &ht);
+	size_t res = fnptr(col.data.data(), col.data.size(), &bt);
 
 	asmrt.rt.release(fnptr);
 
@@ -103,11 +96,10 @@ template<class HT>
 #endif
 
 #ifdef ENABLE_LLVMJIT
-template<class HT>
-[[gnu::noinline]] void probe_llvmjit(const HT &ht, const Column &col){
+[[gnu::noinline]] void probe_llvmjit(const BitsetTable &bt, const Column &col){
 	auto start = std::chrono::high_resolution_clock::now();
 
-	using func_type = uint64_t (*)(const uint64_t *col, size_t size, const HT *ht);
+	using func_type = uint64_t (*)(const uint64_t *col, size_t size, const BitsetTable *bt);
 	// init backend
 	coat::runtimellvmjit::initTarget();
 	coat::runtimellvmjit llvmrt;
@@ -117,7 +109,7 @@ template<class HT>
 	// finalize function
 	func_type fnptr = fn.finalize(llvmrt);
 	// execute generated function
-	size_t res = fnptr(col.data.data(), col.data.size(), &ht);
+	size_t res = fnptr(col.data.data(), col.data.size(), &bt);
 	//FIXME: free function
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -141,21 +133,24 @@ int main(int argc, char *argv[]){
 
 	// build phase
 	auto start = std::chrono::high_resolution_clock::now();
-	MultiArrayTable<uint64_t> ht(col_build.min, col_build.max, col_build.data.data(), col_build.data.size());
+	BitsetTable bt(col_build.min, col_build.max);
+	for(uint64_t v : col_build.data){
+		bt.insert(v);
+	}
 	auto end = std::chrono::high_resolution_clock::now();
 	auto time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 	printf("build phase: %lu us\n", time);
 
 	puts("hardcoded C++");
-	probe_hardcoded(ht, col_probe);
+	probe_hardcoded(bt, col_probe);
 
 #ifdef ENABLE_ASMJIT
 	puts("asmjit");
-	probe_asmjit(ht, col_probe);
+	probe_asmjit(bt, col_probe);
 #endif
 #ifdef ENABLE_LLVMJIT
 	puts("llvmjit");
-	probe_llvmjit(ht, col_probe);
+	probe_llvmjit(bt, col_probe);
 #endif
 
 	return 0;

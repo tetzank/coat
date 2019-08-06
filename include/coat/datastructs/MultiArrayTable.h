@@ -49,7 +49,6 @@ public:
 };
 
 
-
 #if defined(ENABLE_ASMJIT) || defined(ENABLE_LLVMJIT)
 namespace coat {
 

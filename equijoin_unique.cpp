@@ -132,7 +132,7 @@ int main(int argc, char *argv[]){
 
 	Column col_probe = read_column_file(argv[1]);
 	Column col_build = read_column_file(argv[2]);
-	printf("probe size: %lu, min: %lu; max: %lu\nbuild size: %lu; min: %lu; max: %lu\n",
+	printf("probe size: %lu; min: %lu; max: %lu\nbuild size: %lu; min: %lu; max: %lu\n",
 		col_probe.data.size(), col_probe.min, col_probe.max,
 		col_build.data.size(), col_build.min, col_build.max);
 

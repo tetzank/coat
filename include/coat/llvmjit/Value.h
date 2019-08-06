@@ -99,17 +99,17 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value &operator-=(int constant){ store( cc.CreateSub(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
 	Value &operator-=(const Ref<F,Value> &other){ store( cc.CreateSub(load(), other.load()) ); return *this; }
 
-	Value &operator&=(const Value &other){          store( cc.CreateAnd(load(), other.load()) ); return *this; }
-	Value &operator&=(int constant){               store( cc.CreateAnd(load(), constant) ); return *this; }
-	//Value &operator&=(const Ref<Value> &other){ cc.and_(reg, other); return *this; }
+	Value &operator&=(const Value &other){        store( cc.CreateAnd(load(), other.load()) ); return *this; }
+	Value &operator&=(int constant){              store( cc.CreateAnd(load(), constant) ); return *this; }
+	Value &operator&=(const Ref<F,Value> &other){ store( cc.CreateAnd(load(), other.load()) ); return *this; }
 
-	Value &operator|=(const Value &other){          store( cc.CreateOr(load(), other.load()) ); return *this; }
-	Value &operator|=(int constant){               store( cc.CreateOr(load(), constant) ); return *this; }
-	//Value &operator|=(const Ref<Value> &other){ cc.or_(reg, other); return *this; }
+	Value &operator|=(const Value &other){        store( cc.CreateOr(load(), other.load()) ); return *this; }
+	Value &operator|=(int constant){              store( cc.CreateOr(load(), constant) ); return *this; }
+	Value &operator|=(const Ref<F,Value> &other){ store( cc.CreateOr(load(), other.load()) ); return *this; }
 
-	Value &operator^=(const Value &other){          store( cc.CreateXor(load(), other.load()) ); return *this; }
-	Value &operator^=(int constant){               store( cc.CreateXor(load(), constant) ); return *this; }
-	//Value &operator^=(const Ref<Value> &other){ cc.xor_(reg, other); return *this; }
+	Value &operator^=(const Value &other){        store( cc.CreateXor(load(), other.load()) ); return *this; }
+	Value &operator^=(int constant){              store( cc.CreateXor(load(), constant) ); return *this; }
+	Value &operator^=(const Ref<F,Value> &other){ store( cc.CreateXor(load(), other.load()) ); return *this; }
 
 	//Value &operator~(){ cc.not_(reg); return *this; }
 
