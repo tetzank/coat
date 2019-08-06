@@ -262,6 +262,13 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
 	Value operator| (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  |= amount; return tmp; }
 	Value operator^ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
+	Value operator<<(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= other; return tmp; }
+	Value operator>>(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= other; return tmp; }
+	Value operator+ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += other; return tmp; }
+	Value operator- (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= other; return tmp; }
+	Value operator& (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= other; return tmp; }
+	Value operator| (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  |= other; return tmp; }
+	Value operator^ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  ^= other; return tmp; }
 
 
 	// comparisons

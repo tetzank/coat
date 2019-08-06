@@ -70,7 +70,7 @@ struct StructBase<Struct<CC,ArrayTable<T>>> {
 		if_then(self.cc, key >= min, [&]{
 			auto max = self.template get_reference<AT::member_max>();
 			if_then(self.cc, key <= max, [&]{
-				auto val = arr[key];
+				auto val = arr[key - min];
 				then(val);
 			});
 		});
