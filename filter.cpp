@@ -16,6 +16,8 @@
 
 #include "coat/datastructs/pod_vector.h"
 
+#define DUMP 0
+
 
 using column_t = uint64_t*;
 
@@ -91,18 +93,6 @@ public:
 	}
 };
 
-
-#if 0
-template<class CC>
-struct CodgenContext {
-	std::vector<Value<CC,uint64_t>> rowids;
-	coat::Value<CC,uint64_t> upper;
-	//coat::Ptr<CC,coat::Value<CC,uint64_t>> projection_addr;
-	Value<CC,uint64_t> amount;
-};
-using Ctx_asmjit = CodegenContext<asmjit::x86::Compiler>;
-using Ctx_llvmjit = CodegenContext<llvm::IRBuilder<>>;
-#endif
 
 // function signature of generated function
 // parameters: lower, upper (morsel), ptr to buffer of projection entries
@@ -292,27 +282,16 @@ public:
 	void codegen(Fn_llvmjit &fn, coat::Value<llvm::IRBuilder<>,uint64_t> &rowid) override { codegen_impl(fn, rowid); }
 #endif
 
-	size_t getResultSize() const {
-		return results.size();
+	const pod_vector<uint64_t> &getResults() const {
+		return results;
 	}
 };
 
 
-// table in columnar storage, imported from CSV, all columns integers
+// table in columnar storage, imported from binary file with mmap(), all columns integers
 // filter predicates for various columns "colid comparison literal", example: 1<42
 // all predicates have to hold
 // return list of rowids which satisfy predicates
-//
-// if( pred1 && pred2 && ... )
-//
-// if( pred1 )
-//   if( pred2 )
-//     if( ... )
-//       ...
-//
-// for( auto &pred : predicates)
-//   
-
 int main(int argc, char **argv){
 	if(argc == 1){
 		printf("usage: %s [ -t | -a | -l[0-3] ] relation_file filer...\n", argv[0]);
@@ -344,7 +323,7 @@ int main(int argc, char **argv){
 
 		auto t_end = std::chrono::high_resolution_clock::now();
 		printf("time: %12.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
-		printf("results size: %lu\n", proj->getResultSize());
+		printf("results size: %lu\n", proj->getResults().size());
 #ifdef ENABLE_ASMJIT
 	}else if(argv[1][1] == 'a'){
 		puts("asmjit backend");
@@ -372,7 +351,7 @@ int main(int argc, char **argv){
 			std::chrono::duration<double, std::micro>( t_end - t_codegen_done).count(),
 			std::chrono::duration<double, std::micro>( t_end - t_start).count()
 		);
-		printf("results size: %lu\n", proj->getResultSize());
+		printf("results size: %lu\n", proj->getResults().size());
 
 		asmrt.rt.release(fnptr);
 #endif
@@ -428,10 +407,25 @@ int main(int argc, char **argv){
 			std::chrono::duration<double, std::micro>( t_end - t_codegen_done).count(),
 			std::chrono::duration<double, std::micro>( t_end - t_start).count()
 		);
-		printf("results size: %lu\n", proj->getResultSize());
+		printf("results size: %lu\n", proj->getResults().size());
 		//FIXME: free function
 #endif
 	}
+
+#if DUMP
+	FILE *fd = fopen("results.dump", "w");
+	const auto &results = proj->getResults();
+	size_t nc = table.getNumberOfColumns();
+	for(uint64_t r : results){
+		// assume at least one column
+		fprintf(fd, "%lu: %lu", r, table.getColumn(0)[r]);
+		for(size_t c=1; c<nc; ++c){
+			fprintf(fd, " | %lu", table.getColumn(c)[r]);
+		}
+		fprintf(fd, "\n");
+	}
+	fclose(fd);
+#endif
 
 	delete scan;
 

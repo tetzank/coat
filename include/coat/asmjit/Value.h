@@ -42,22 +42,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 			}
 		}
 	}
-	Value(::asmjit::x86::Compiler &cc, T val, const char *name="") : ValueBase(cc) {
-		if constexpr(std::is_signed_v<T>){
-			switch(sizeof(T)){
-				case 1: reg = cc.newInt8 (name); break;
-				case 2: reg = cc.newInt16(name); break;
-				case 4: reg = cc.newInt32(name); break;
-				case 8: reg = cc.newInt64(name); break;
-			}
-		}else{
-			switch(sizeof(T)){
-				case 1: reg = cc.newUInt8 (name); break;
-				case 2: reg = cc.newUInt16(name); break;
-				case 4: reg = cc.newUInt32(name); break;
-				case 8: reg = cc.newUInt64(name); break;
-			}
-		}
+	Value(F &cc, T val, const char *name="") : Value(cc, name) {
 		*this = val;
 	}
 

@@ -173,8 +173,8 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 		self.template get_reference<PV::member_finish>() = vr_finish;
 	}
 
-	Value<CC,size_t> size() {
-		auto &self = static_cast<Struct<CC,PV>&>(*this);
+	Value<CC,size_t> size() const {
+		auto &self = static_cast<const Struct<CC,PV>&>(*this);
 		//FIXME: accessed each time
 		auto vr_start = self.template get_value<PV::member_start>();
 		auto vr_finish = self.template get_value<PV::member_finish>();

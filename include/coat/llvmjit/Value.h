@@ -29,7 +29,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 			case 8: memreg = allocateStackVariable(cc, llvm::Type::getInt64Ty(cc.getContext()), name); break;
 		}
 	}
-	Value(llvm::IRBuilder<> &cc, T val, const char *name="") : Value(cc, name) {
+	Value(F &cc, T val, const char *name="") : Value(cc, name) {
 		*this = val;
 	}
 
