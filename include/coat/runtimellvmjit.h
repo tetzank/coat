@@ -156,7 +156,7 @@ public:
 		llvm::raw_string_ostream os(str);
 		bool failed = llvm::verifyFunction(*jit_func, &os);
 		if(failed){
-			fprintf(stderr, "\nfunction verifier:\n%s\n", str.c_str());
+			fprintf(stderr, "\nfunction verifier:\n%s\n", os.str().c_str());
 		}
 		return !failed;
 	}
