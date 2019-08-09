@@ -1,7 +1,11 @@
 #ifndef COAT_ASMJIT_REF_H_
 #define COAT_ASMJIT_REF_H_
 
+#include "coat/Ref.h"
+
 #include <asmjit/asmjit.h>
+
+#include "Condition.h"
 
 
 namespace coat {

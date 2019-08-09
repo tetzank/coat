@@ -1,6 +1,11 @@
 #ifndef COAT_ASMJIT_STRUCT_H_
 #define COAT_ASMJIT_STRUCT_H_
 
+#include <asmjit/asmjit.h>
+
+#include "coat/Function.h"
+#include "Ref.h"
+
 
 namespace coat {
 

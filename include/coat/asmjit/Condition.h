@@ -1,6 +1,8 @@
 #ifndef COAT_ASMJIT_CONDITION_H_
 #define COAT_ASMJIT_CONDITION_H_
 
+#include "coat/Condition.h"
+
 #include <variant>
 
 #include <asmjit/asmjit.h>
