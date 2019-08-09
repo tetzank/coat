@@ -38,6 +38,10 @@ public:
 			rows[--offsets[col[i] - min]] = i;
 		}
 	}
+	~MultiArrayTable(){
+		free(offsets);
+		free(rows);
+	}
 
 	std::pair<T*,T*> lookupIterators(size_t key) const {
 		if(key >= min && key <= max){
