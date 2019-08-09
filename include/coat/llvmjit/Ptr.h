@@ -32,7 +32,12 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 			case 8: memreg = allocateStackVariable(cc, llvm::Type::getInt64PtrTy(cc.getContext()), name); break;
 		}
 	}
-	Ptr(const Ptr &other) : cc(other.cc), memreg(other.memreg) {}
+	// real copy requires new stack memory and copy of content
+	Ptr(const Ptr &other) : Ptr(other.cc) {
+		*this = other;
+	}
+	// move, just take the stack memory
+	Ptr(const Ptr &&other) : cc(other.cc), memreg(other.memreg) {}
 
 	//FIXME: takes any type
 	Ptr &operator=(llvm::Value *val){ store( val ); return *this; }

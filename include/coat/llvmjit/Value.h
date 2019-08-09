@@ -32,8 +32,12 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value(F &cc, T val, const char *name="") : Value(cc, name) {
 		*this = val;
 	}
-
-	Value(const Value &other) : ValueBase(other) {}
+	// real copy requires new stack memory and copy of content
+	Value(const Value &other) : Value(other.cc) {
+		*this = other;
+	}
+	// move, just take the stack memory
+	//Value(const Value &&other) : ValueBase(other) {}
 
 	// explicit type conversion, assignment
 	// always makes a copy

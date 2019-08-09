@@ -46,7 +46,11 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		*this = val;
 	}
 
-	Value(const Value &other) : ValueBase(other) {}
+	//Value(const Value &other) : ValueBase(other) {}
+	// real copy means new register and copy content
+	Value(const Value &other) : Value(other.cc) {
+		*this = other;
+	}
 
 	// explicit type conversion, assignment
 	// always makes a copy

@@ -12,7 +12,8 @@ struct ValueBase<llvm::IRBuilder<>> {
 	llvm::Value *memreg;
 
 	ValueBase(llvm::IRBuilder<> &cc) : cc(cc) {}
-	ValueBase(const ValueBase &other) : cc(other.cc), memreg(other.memreg) {}
+	// move, just take stack memory
+	//ValueBase(const ValueBase &&other) : cc(other.cc), memreg(other.memreg) {}
 
 	llvm::Value *load() const { return cc.CreateLoad(memreg, "load"); }
 	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }

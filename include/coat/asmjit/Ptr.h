@@ -24,7 +24,12 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Ptr(::asmjit::x86::Compiler &cc, const char *name="") : cc(cc) {
 		reg = cc.newIntPtr(name);
 	}
-	Ptr(const Ptr &other) : cc(other.cc), reg(other.reg) {}
+	// real copy requires new register and copy of content
+	Ptr(const Ptr &other) : Ptr(other.cc) {
+		*this = other;
+	}
+	// move, just take the register
+	Ptr(const Ptr &&other) : cc(other.cc), reg(other.reg) {}
 
 	Ptr &operator=(value_type *value){
 		cc.mov(reg, ::asmjit::imm(value));
