@@ -171,6 +171,9 @@ public:
 	void setOptLevel(int optLevel){
 		this->optLevel = optLevel;
 	}
+	int getOptLevel() const {
+		return optLevel;
+	}
 
 	void optimize(){
 		if(optLevel > 0){
