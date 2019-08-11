@@ -15,6 +15,7 @@ struct ValueBase<::asmjit::x86::Compiler> {
 
 	ValueBase(::asmjit::x86::Compiler &cc) : cc(cc) {}
 	//ValueBase(const ValueBase &other) : cc(other.cc), reg(other.reg) {}
+	ValueBase(const ValueBase &&other) : cc(other.cc), reg(other.reg) {}
 
 	operator const ::asmjit::x86::Gp&() const { return reg; }
 	operator       ::asmjit::x86::Gp&()       { return reg; }

@@ -46,10 +46,16 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		*this = val;
 	}
 
-	//Value(const Value &other) : ValueBase(other) {}
 	// real copy means new register and copy content
 	Value(const Value &other) : Value(other.cc) {
 		*this = other;
+	}
+	// move ctor
+	Value(const Value &&other) : ValueBase(std::move(other)) {}
+	// move assign
+	Value &operator=(const Value &&other){
+		reg = other.reg; // just take virtual register
+		return *this;
 	}
 
 	// explicit type conversion, assignment
