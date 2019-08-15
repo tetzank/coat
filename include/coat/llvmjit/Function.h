@@ -54,6 +54,12 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	Value<::llvm::IRBuilder<>,T> getValue(const char *name="") {
 		return Value<::llvm::IRBuilder<>,T>(cc, name);
 	}
+	template<typename T>
+	Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_cv_t<T>>> makePointer(T *ptr, const char *name=""){
+		Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_cv_t<T>>> vr_ptr(cc, name);
+		vr_ptr = (std::remove_cv_t<T>*)ptr;
+		return vr_ptr;
+	}
 
 	func_type finalize(runtimellvmjit &jit){
 		func_type fn;

@@ -95,7 +95,24 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	}
 	// memory operand not possible on right side
 
-	//TODO: *=, /= %=
+	Value &operator*=(const Value &other){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateNSWMul(load(), other.load()) );
+		}else{
+			store( cc.CreateMul(load(), other.load()) );
+		}
+		return *this;
+	}
+	Value &operator*=(int constant){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateNSWMul(load(), llvm::ConstantInt::get(type(), constant)) );
+		}else{
+			store( cc.CreateMul(load(), llvm::ConstantInt::get(type(), constant)) );
+		}
+		
+		return *this;
+	}
+	//TODO: /=, %=
 
 	Value &operator+=(const Value &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
 	Value &operator+=(int constant){ store( cc.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
@@ -122,6 +139,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	// operators creatting temporary
 	Value operator<<(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
 	Value operator>>(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
+	Value operator* (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= amount; return tmp; }
 	Value operator+ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
 	Value operator- (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
 	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }

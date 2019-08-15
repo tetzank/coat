@@ -10,7 +10,6 @@
 #include "coat/ControlFlow.h"
 
 
-
 struct Table {
 #define MEMBERS(x) \
 	x(size_t, ncols) \
@@ -54,6 +53,8 @@ struct StructBase<Struct<CC,Table>> {
 using column_t = std::vector<uint64_t>;
 
 
+namespace {
+
 static column_t generic(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -87,6 +88,135 @@ static column_t generic(const Table &table, const char *operations){
 }
 
 
+template<class Fn>
+void assemble_jit1(Fn &fn, const char *operations){
+	auto args = fn.getArguments("table", "result", "size");
+	auto &vr_table = std::get<0>(args);
+	auto &vr_result = std::get<1>(args);
+	auto &vr_size = std::get<2>(args);
+
+	coat::Value vr_index(fn, 0UL, "index");
+	coat::loop_while(fn, vr_index < vr_size, [&]{
+		const char *p = operations;
+		int col = *p - '0';
+		++p;
+		auto vr_res = fn.template getValue<uint64_t>("res");
+		vr_res = vr_table[col][vr_index];
+		while(*p){
+			switch(*p){
+				case '+':
+					col = p[1] - '0';
+					vr_res += vr_table[col][vr_index];
+					break;
+				case '-':
+					col = p[1] - '0';
+					vr_res -= vr_table[col][vr_index];
+					break;
+				default:
+					printf("unsupported operation: %c\n", *p);
+					std::exit(-1);
+			}
+			p += 2;
+		}
+		vr_result[vr_index] = vr_res;
+		++vr_index;
+	});
+	coat::ret(fn);
+}
+
+template<class Fn>
+void assemble_jit2(Fn &fn, const char *operations){
+	auto args = fn.getArguments("table", "result", "size");
+	auto &vr_table = std::get<0>(args);
+	auto &vr_result = std::get<1>(args);
+	auto &vr_size = std::get<2>(args);
+
+	auto vr_nrows = vr_table.template get_value<Table::member_nrows>();
+	auto vr_data = vr_table.template get_value<Table::member_data>();
+	coat::Value vr_index(fn, 0UL, "index");
+	coat::loop_while(fn, vr_index < vr_size, [&]{
+		const char *p = operations;
+		int col = *p - '0';
+		++p;
+		auto vr_res = fn.template getValue<uint64_t>("res");
+		//vr_res = vr_table[col][vr_index];
+		auto vr_col = vr_data + (vr_nrows * col);
+		vr_res = vr_col[vr_index];
+		while(*p){
+			switch(*p){
+				case '+': {
+					col = p[1] - '0';
+					//vr_res += vr_table[col][vr_index];
+					auto vr_col = vr_data + (vr_nrows * col);
+					vr_res += vr_col[vr_index];
+					break;
+				}
+				case '-': {
+					col = p[1] - '0';
+					//vr_res -= vr_table[col][vr_index];
+					auto vr_col = vr_data + (vr_nrows * col);
+					vr_res -= vr_col[vr_index];
+					break;
+				}
+				default:
+					printf("unsupported operation: %c\n", *p);
+					std::exit(-1);
+			}
+			p += 2;
+		}
+		vr_result[vr_index] = vr_res;
+		++vr_index;
+	});
+	coat::ret(fn);
+}
+
+template<class Fn>
+void assemble_jit3(Fn &fn, const char *operations, const Table &table){
+	auto args = fn.getArguments("result", "size");
+	auto &vr_result = std::get<0>(args);
+	auto &vr_size = std::get<1>(args);
+
+	coat::Value vr_index(fn, 0UL, "index");
+	coat::loop_while(fn, vr_index < vr_size, [&]{
+		const char *p = operations;
+		int col = *p - '0';
+		++p;
+		auto vr_res = fn.template getValue<uint64_t>("res");
+		//vr_res = vr_table[col][vr_index];
+		const uint64_t *column = table[col];
+		auto vr_col = fn.makePointer(column, "col");
+		vr_res = vr_col[vr_index];
+		while(*p){
+			switch(*p){
+				case '+': {
+					col = p[1] - '0';
+					//vr_res += vr_table[col][vr_index];
+					const uint64_t *column = table[col];
+					auto vr_col = fn.makePointer(column, "col");
+					vr_res += vr_col[vr_index];
+					break;
+				}
+				case '-': {
+					col = p[1] - '0';
+					//vr_res -= vr_table[col][vr_index];
+					const uint64_t *column = table[col];
+					auto vr_col = fn.makePointer(column, "col");
+					vr_res -= vr_col[vr_index];
+					break;
+				}
+				default:
+					printf("unsupported operation: %c\n", *p);
+					std::exit(-1);
+			}
+			p += 2;
+		}
+		vr_result[vr_index] = vr_res;
+		++vr_index;
+	});
+	coat::ret(fn);
+}
+
+
 static column_t jit1_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -96,39 +226,7 @@ static column_t jit1_asmjit(const Table &table, const char *operations){
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
-	{
-		auto args = fn.getArguments("table", "result", "size");
-		auto &vr_table = std::get<0>(args);
-		auto &vr_result = std::get<1>(args);
-		auto &vr_size = std::get<2>(args);
-
-		coat::Value vr_index(fn, 0UL, "index");
-		coat::loop_while(fn, vr_index < vr_size, [&]{
-			const char *p = operations;
-			int col = *p - '0';
-			++p;
-			coat::Value<asmjit::x86::Compiler,uint64_t> vr_res(fn, "res");
-			vr_res = vr_table[col][vr_index];
-			while(*p){
-				switch(*p){
-					case '+':
-						col = p[1] - '0';
-						vr_res += vr_table[col][vr_index];
-						break;
-					case '-':
-						col = p[1] - '0';
-						vr_res -= vr_table[col][vr_index];
-						break;
-					default:
-						printf("unsupported operation: %c\n", *p);
-						std::exit(-1);
-				}
-				p += 2;
-			}
-			vr_result[vr_index] = vr_res;
-			++vr_index;
-		});
-	}
+	assemble_jit1(fn, operations);
 	// finalize function
 	func_t fnptr = fn.finalize(&asmrt);
 
@@ -147,6 +245,48 @@ static column_t jit1_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+static column_t jit1_llvmjit(const Table &table, const char *operations){
+	const size_t size = table.nrows;
+	column_t result(size);
+
+	auto t_start = std::chrono::high_resolution_clock::now();
+
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
+	llvmrt.setOptLevel(2);
+	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
+	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
+	assemble_jit1(fn, operations);
+
+	llvmrt.print("jit1.ll");
+	if(!llvmrt.verifyFunctions()){
+		puts("verification failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
+	}
+	if(llvmrt.getOptLevel() > 0){
+		llvmrt.optimize();
+		llvmrt.print("jit1_opt.ll");
+		if(!llvmrt.verifyFunctions()){
+			puts("verification after optimization failed. aborting.");
+			exit(EXIT_FAILURE); //FIXME: better error handling
+		}
+	}
+	// finalize function
+	func_t fnptr = fn.finalize(llvmrt);
+
+	auto t_compile = std::chrono::high_resolution_clock::now();
+	// execute generated function
+	fnptr(&table, result.data(), size);
+
+	auto t_end = std::chrono::high_resolution_clock::now();
+	printf("jit1 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
+	);
+
+	return result;
+}
 
 static column_t jit2_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
@@ -157,49 +297,7 @@ static column_t jit2_asmjit(const Table &table, const char *operations){
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
-	{
-		auto args = fn.getArguments("table", "result", "size");
-		auto &vr_table = std::get<0>(args);
-		auto &vr_result = std::get<1>(args);
-		auto &vr_size = std::get<2>(args);
-
-		auto vr_nrows = vr_table.get_value<Table::member_nrows>();
-		auto vr_data = vr_table.get_value<Table::member_data>();
-		coat::Value vr_index(fn, 0UL, "index");
-		coat::loop_while(fn, vr_index < vr_size, [&]{
-			const char *p = operations;
-			int col = *p - '0';
-			++p;
-			coat::Value<asmjit::x86::Compiler,uint64_t> vr_res(fn, "res");
-			//vr_res = vr_table[col][vr_index];
-			auto vr_col = vr_data + (vr_nrows * col);
-			vr_res = vr_col[vr_index];
-			while(*p){
-				switch(*p){
-					case '+': {
-						col = p[1] - '0';
-						//vr_res += vr_table[col][vr_index];
-						auto vr_col = vr_data + (vr_nrows * col);
-						vr_res += vr_col[vr_index];
-						break;
-					}
-					case '-': {
-						col = p[1] - '0';
-						//vr_res -= vr_table[col][vr_index];
-						auto vr_col = vr_data + (vr_nrows * col);
-						vr_res -= vr_col[vr_index];
-						break;
-					}
-					default:
-						printf("unsupported operation: %c\n", *p);
-						std::exit(-1);
-				}
-				p += 2;
-			}
-			vr_result[vr_index] = vr_res;
-			++vr_index;
-		});
-	}
+	assemble_jit2(fn, operations);
 	// finalize function
 	func_t fnptr = fn.finalize(&asmrt);
 
@@ -218,6 +316,48 @@ static column_t jit2_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+static column_t jit2_llvmjit(const Table &table, const char *operations){
+	const size_t size = table.nrows;
+	column_t result(size);
+
+	auto t_start = std::chrono::high_resolution_clock::now();
+
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
+	llvmrt.setOptLevel(2);
+	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
+	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
+	assemble_jit2(fn, operations);
+
+	llvmrt.print("jit2.ll");
+	if(!llvmrt.verifyFunctions()){
+		puts("verification failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
+	}
+	if(llvmrt.getOptLevel() > 0){
+		llvmrt.optimize();
+		llvmrt.print("jit2_opt.ll");
+		if(!llvmrt.verifyFunctions()){
+			puts("verification after optimization failed. aborting.");
+			exit(EXIT_FAILURE); //FIXME: better error handling
+		}
+	}
+	// finalize function
+	func_t fnptr = fn.finalize(llvmrt);
+
+	auto t_compile = std::chrono::high_resolution_clock::now();
+	// execute generated function
+	fnptr(&table, result.data(), size);
+
+	auto t_end = std::chrono::high_resolution_clock::now();
+	printf("jit2 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
+	);
+
+	return result;
+}
 
 static column_t jit3_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
@@ -228,49 +368,7 @@ static column_t jit3_asmjit(const Table &table, const char *operations){
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(uint64_t *result, size_t size);
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
-	{
-		auto args = fn.getArguments("result", "size");
-		auto &vr_result = std::get<0>(args);
-		auto &vr_size = std::get<1>(args);
-
-		coat::Value vr_index(fn, 0UL, "index");
-		coat::loop_while(fn, vr_index < vr_size, [&]{
-			const char *p = operations;
-			int col = *p - '0';
-			++p;
-			coat::Value<asmjit::x86::Compiler,uint64_t> vr_res(fn, "res");
-			//vr_res = vr_table[col][vr_index];
-			const uint64_t *column = table[col];
-			auto vr_col = fn.makePointer(column, "col");
-			vr_res = vr_col[vr_index];
-			while(*p){
-				switch(*p){
-					case '+': {
-						col = p[1] - '0';
-						//vr_res += vr_table[col][vr_index];
-						const uint64_t *column = table[col];
-						auto vr_col = fn.makePointer(column, "col");
-						vr_res += vr_col[vr_index];
-						break;
-					}
-					case '-': {
-						col = p[1] - '0';
-						//vr_res -= vr_table[col][vr_index];
-						const uint64_t *column = table[col];
-						auto vr_col = fn.makePointer(column, "col");
-						vr_res -= vr_col[vr_index];
-						break;
-					}
-					default:
-						printf("unsupported operation: %c\n", *p);
-						std::exit(-1);
-				}
-				p += 2;
-			}
-			vr_result[vr_index] = vr_res;
-			++vr_index;
-		});
-	}
+	assemble_jit3(fn, operations, table);
 	// finalize function
 	func_t fnptr = fn.finalize(&asmrt);
 
@@ -289,6 +387,48 @@ static column_t jit3_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+static column_t jit3_llvmjit(const Table &table, const char *operations){
+	const size_t size = table.nrows;
+	column_t result(size);
+
+	auto t_start = std::chrono::high_resolution_clock::now();
+
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
+	llvmrt.setOptLevel(2);
+	using func_t = void (*)(uint64_t *result, size_t size);
+	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
+	assemble_jit3(fn, operations, table);
+
+	llvmrt.print("jit3.ll");
+	if(!llvmrt.verifyFunctions()){
+		puts("verification failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
+	}
+	if(llvmrt.getOptLevel() > 0){
+		llvmrt.optimize();
+		llvmrt.print("jit3_opt.ll");
+		if(!llvmrt.verifyFunctions()){
+			puts("verification after optimization failed. aborting.");
+			exit(EXIT_FAILURE); //FIXME: better error handling
+		}
+	}
+	// finalize function
+	func_t fnptr = fn.finalize(llvmrt);
+
+	auto t_compile = std::chrono::high_resolution_clock::now();
+	// execute generated function
+	fnptr(result.data(), size);
+
+	auto t_end = std::chrono::high_resolution_clock::now();
+	printf("jit3 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
+		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
+	);
+
+	return result;
+}
 
 
 static void write(const column_t &result, const char *name){
@@ -298,6 +438,9 @@ static void write(const column_t &result, const char *name){
 	}
 	fclose(fd);
 }
+
+} // anonymous namespace
+
 
 int main(int argc, char **argv){
 	// defaults
@@ -340,17 +483,32 @@ int main(int argc, char **argv){
 		column_t result = generic(table, operations);
 		if(dump) write(result, "calc_generic.dump");
 	}
+
 	REPEAT{
 		column_t result = jit1_asmjit(table, operations);
 		if(dump) write(result, "calc_jit1_asmjit.dump");
 	}
 	REPEAT{
+		column_t result = jit1_llvmjit(table, operations);
+		if(dump) write(result, "calc_jit1_llvmjit.dump");
+	}
+
+	REPEAT{
 		column_t result = jit2_asmjit(table, operations);
 		if(dump) write(result, "calc_jit2_asmjit.dump");
 	}
 	REPEAT{
+		column_t result = jit2_llvmjit(table, operations);
+		if(dump) write(result, "calc_jit2_llvmjit.dump");
+	}
+
+	REPEAT{
 		column_t result = jit3_asmjit(table, operations);
 		if(dump) write(result, "calc_jit3_asmjit.dump");
+	}
+	REPEAT{
+		column_t result = jit3_llvmjit(table, operations);
+		if(dump) write(result, "calc_jit3_llvmjit.dump");
 	}
 
 	return 0;
