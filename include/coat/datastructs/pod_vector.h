@@ -29,6 +29,11 @@ public:
 		finish = start;
 		capend = start + initial_size;
 	}
+	pod_vector(size_t size){
+		start = (T*)malloc(size * sizeof(T));
+		finish = start;
+		capend = start + size;
+	}
 	~pod_vector(){
 		free(start);
 	}
@@ -56,7 +61,10 @@ public:
 		capend = (T*)(((char*)start) + (newsize*sizeof(T))); // ugly
 	}
 	void resize(size_t size){
-		//FIXME: not meant for growing, but not checked at all
+		// grow when size larger than capacity
+		if(size > size_t(capend-start)){
+			reserve(size);
+		}
 		finish = start + size;
 	}
 

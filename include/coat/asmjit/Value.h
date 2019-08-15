@@ -187,6 +187,67 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 	// immediate not possible in mul, but imul has support
+	Value &operator*=(int constant){
+		//static_assert(sizeof(T) > 1, "multiplication of byte type currently not supported");
+		// special handling of stuff which can be done with lea
+		switch(constant){
+			case  0: cc.xor_(reg, reg); break;
+			case  1: /* do nothing */ break;
+			case  2:
+				// lea rax, [rax + rax]
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg));
+				break;
+			case  3:
+				// lea rax, [rax + rax*2]
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(2)));
+				break;
+			case  4:
+				// lea rax, [0 + rax*4]
+				cc.lea(reg, ::asmjit::x86::ptr(0, reg, clog2(4)));
+				break;
+			case  5:
+				// lea rax, [rax + rax*4]
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(4)));
+				break;
+			case  6:
+				// lea rax, [rax + rax*2]
+				// add rax, rax
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(2)));
+				cc.add(reg, reg);
+				break;
+			//case  7:
+			//	// requires two registers
+			//	// lea rbx, [0 + rax*8]
+			//	// sub rbx, rax
+			//	cc.lea(reg, ::asmjit::x86::ptr(0, reg, clog2(8)));
+			//	cc.sub();
+			//	break;
+			case  8:
+				// lea rax, [0 + rax*8]
+				cc.lea(reg, ::asmjit::x86::ptr(0, reg, clog2(8)));
+				break;
+			case  9:
+				// lea rax, [rax + rax*8]
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(8)));
+				break;
+			case 10:
+				// lea rax, [rax + rax*4]
+				// add rax, rax
+				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(4)));
+				cc.add(reg, reg);
+				break;
+
+			default: {
+				if constexpr(std::is_signed_v<T>){
+					cc.imul(reg, ::asmjit::imm(constant));
+				}else{
+					Value temp(cc, T(constant), "constant");
+					operator*=(temp);
+				}
+			}
+		}
+		return *this;
+	}
 
 	Value &operator/=(const Value &other){
 		static_assert(sizeof(T) > 1, "division of byte type currently not supported");
@@ -267,6 +328,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	// operators creating temporary virtual registers
 	Value operator<<(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
 	Value operator>>(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
+	Value operator* (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= amount; return tmp; }
 	Value operator+ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
 	Value operator- (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
 	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }

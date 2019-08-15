@@ -54,6 +54,12 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	Value<::asmjit::x86::Compiler,T> getValue(const char *name="") {
 		return Value<::asmjit::x86::Compiler,T>(cc, name);
 	}
+	template<typename T>
+	Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,std::remove_cv_t<T>>> makePointer(T *ptr, const char *name=""){
+		Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,std::remove_cv_t<T>>> vr_ptr(cc, name);
+		vr_ptr = (std::remove_cv_t<T>*)ptr;
+		return vr_ptr;
+	}
 
 	func_type finalize(
 		runtimeasmjit *runtime,
