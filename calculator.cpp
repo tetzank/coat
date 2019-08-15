@@ -51,44 +51,10 @@ struct StructBase<Struct<CC,Table>> {
 
 }
 
-
 using column_t = std::vector<uint64_t>;
-using table_t = std::vector<column_t>;
 
 
-static column_t calc_vector(const table_t &table, const char *operations){
-	const size_t size = table[0].size();
-	column_t result(size);
-	auto t_start = std::chrono::high_resolution_clock::now();
-	for(size_t i=0; i<size; ++i){
-		const char *p = operations;
-		int col = *p - '0';
-		++p;
-		uint64_t res = table[col][i];
-		while(*p){
-			switch(*p){
-				case '+':
-					col = p[1] - '0';
-					res += table[col][i];
-					break;
-				case '-':
-					col = p[1] - '0';
-					res -= table[col][i];
-					break;
-				default:
-					printf("unsupported operation: %c\n", *p);
-					std::exit(-1);
-			}
-			p += 2;
-		}
-		result[i] = res;
-	}
-	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("vector: %.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
-	return result;
-}
-
-static column_t calc_table(const Table &table, const char *operations){
+static column_t generic(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
 	auto t_start = std::chrono::high_resolution_clock::now();
@@ -116,12 +82,12 @@ static column_t calc_table(const Table &table, const char *operations){
 		result[i] = res;
 	}
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("table: %.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
+	printf("generic: %.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
 	return result;
 }
 
 
-static column_t jit(const Table &table, const char *operations){
+static column_t jit1_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
 
@@ -173,7 +139,7 @@ static column_t jit(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit1: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit1 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -182,7 +148,7 @@ static column_t jit(const Table &table, const char *operations){
 	return result;
 }
 
-static column_t jit2(const Table &table, const char *operations){
+static column_t jit2_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
 
@@ -244,7 +210,7 @@ static column_t jit2(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit2: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit2 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -253,7 +219,7 @@ static column_t jit2(const Table &table, const char *operations){
 	return result;
 }
 
-static column_t jit3(const Table &table, const char *operations){
+static column_t jit3_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
 
@@ -315,7 +281,7 @@ static column_t jit3(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit3: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit3 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -364,44 +330,27 @@ int main(int argc, char **argv){
 	printf("cols: %lu\nrows: %lu\niterations: %lu\noperations: %s\n\n", cols, rows, iterations, operations);
 
 	std::mt19937 gen(42);
-	{
-		table_t table(cols);
-		for(size_t i=0;i<cols; ++i){
-			table[i].resize(rows);
-			std::iota(table[i].begin(), table[i].end(), 0);
-			std::shuffle(table[i].begin(), table[i].end(), gen);
-		}
-
-		REPEAT{
-			column_t result = calc_vector(table, operations);
-			if(dump) write(result, "calc_vector.dump");
-		}
+	Table table(cols, rows);
+	for(size_t i=0;i<cols; ++i){
+		std::iota(table[i], table[i] + table.nrows, 0);
+		std::shuffle(table[i], table[i] + table.nrows, gen);
 	}
 
-	gen.seed(42);
-	{
-		Table table(cols, rows);
-		for(size_t i=0;i<cols; ++i){
-			std::iota(table[i], table[i] + table.nrows, 0);
-			std::shuffle(table[i], table[i] + table.nrows, gen);
-		}
-
-		REPEAT{
-			column_t result = calc_table(table, operations);
-			if(dump) write(result, "calc_table.dump");
-		}
-		REPEAT{
-			column_t result = jit(table, operations);
-			if(dump) write(result, "calc_jit.dump");
-		}
-		REPEAT{
-			column_t result = jit2(table, operations);
-			if(dump) write(result, "calc_jit2.dump");
-		}
-		REPEAT{
-			column_t result = jit3(table, operations);
-			if(dump) write(result, "calc_jit3.dump");
-		}
+	REPEAT{
+		column_t result = generic(table, operations);
+		if(dump) write(result, "calc_generic.dump");
+	}
+	REPEAT{
+		column_t result = jit1_asmjit(table, operations);
+		if(dump) write(result, "calc_jit1_asmjit.dump");
+	}
+	REPEAT{
+		column_t result = jit2_asmjit(table, operations);
+		if(dump) write(result, "calc_jit2_asmjit.dump");
+	}
+	REPEAT{
+		column_t result = jit3_asmjit(table, operations);
+		if(dump) write(result, "calc_jit3_asmjit.dump");
 	}
 
 	return 0;
