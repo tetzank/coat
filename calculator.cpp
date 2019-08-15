@@ -4,6 +4,8 @@
 #include <random>
 #include <chrono>
 
+#include <unistd.h> // for getopt
+
 #include "coat/Function.h"
 #include "coat/ControlFlow.h"
 
@@ -332,48 +334,72 @@ static void write(const column_t &result, const char *name){
 }
 
 int main(int argc, char **argv){
-	size_t ncol = atoi(argv[1]);
-	size_t size = atoi(argv[2]);
-	size_t repetitions = atoi(argv[4]);
+	// defaults
+	size_t cols = 5;
+	size_t rows = 8*1024*1024;
+	size_t iterations = 1;
+#define REPEAT for(size_t i=0; i<iterations; ++i)
+	const char *operations = "2+1-0+4-3";
 	bool dump=false;
+
+	int opt;
+	while((opt=getopt(argc, argv, "hdc:r:i:o:")) != -1){
+		switch(opt){
+			case 'h':
+				printf("\
+%s [options]\n\
+	-c number   number of columns\n\
+	-r number   number of rows\n\
+	-i number   number of iterations of each measurement\n\
+	-o string   sequence of operations on the columns for each row, e.g., '2+1-0+4-3'\n\
+	-d          enable dumping of results to *.dump files\n", argv[0]);
+				return 0;
+			case 'd': dump = true; break;
+			case 'c': cols = atoi(optarg); break;
+			case 'r': rows = atoi(optarg); break;
+			case 'i': iterations = atoi(optarg); break;
+			case 'o': operations = optarg; break;
+		}
+	}
+	printf("cols: %lu\nrows: %lu\niterations: %lu\noperations: %s\n\n", cols, rows, iterations, operations);
 
 	std::mt19937 gen(42);
 	{
-		table_t table(ncol);
-		for(size_t i=0;i<ncol; ++i){
-			table[i].resize(size);
+		table_t table(cols);
+		for(size_t i=0;i<cols; ++i){
+			table[i].resize(rows);
 			std::iota(table[i].begin(), table[i].end(), 0);
 			std::shuffle(table[i].begin(), table[i].end(), gen);
 		}
 
-		for(size_t r=0; r<repetitions; ++r){
-			column_t result = calc_vector(table, argv[3]);
+		REPEAT{
+			column_t result = calc_vector(table, operations);
 			if(dump) write(result, "calc_vector.dump");
 		}
 	}
 
 	gen.seed(42);
 	{
-		Table table(ncol, size);
-		for(size_t i=0;i<ncol; ++i){
+		Table table(cols, rows);
+		for(size_t i=0;i<cols; ++i){
 			std::iota(table[i], table[i] + table.nrows, 0);
 			std::shuffle(table[i], table[i] + table.nrows, gen);
 		}
 
-		for(size_t r=0; r<repetitions; ++r){
-			column_t result = calc_table(table, argv[3]);
+		REPEAT{
+			column_t result = calc_table(table, operations);
 			if(dump) write(result, "calc_table.dump");
 		}
-		for(size_t r=0; r<repetitions; ++r){
-			column_t result = jit(table, argv[3]);
+		REPEAT{
+			column_t result = jit(table, operations);
 			if(dump) write(result, "calc_jit.dump");
 		}
-		for(size_t r=0; r<repetitions; ++r){
-			column_t result = jit2(table, argv[3]);
+		REPEAT{
+			column_t result = jit2(table, operations);
 			if(dump) write(result, "calc_jit2.dump");
 		}
-		for(size_t r=0; r<repetitions; ++r){
-			column_t result = jit3(table, argv[3]);
+		REPEAT{
+			column_t result = jit3(table, operations);
 			if(dump) write(result, "calc_jit3.dump");
 		}
 	}
