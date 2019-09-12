@@ -3,28 +3,28 @@ COAT: COdegen Abstract Types
 
 COAT is an embedded domain specific language (EDSL) for C++ to make just-in-time (JIT) code generation easier.
 It provides abstract types and control flow constructs to express the data flow you want to generate and execute at runtime.
-All operations are transformed at compile-time to appropriate API calls into a supported JIT engine, currently AsmJit and LLVM.
+All operations are transformed at compile-time to appropriate API calls of a supported JIT engine, currently AsmJit and LLVM.
 
 Code specialization has a huge impact on performance.
 Tailored code takes advantage of the knowledge about the involved data types and operations.
 In C++, we can instruct the compiler to generate specialized code at compile-time with the help of template metaprogramming and constant expressions.
 However, constant evaluation is limited as it cannot leverage runtime information.
-Just-in-time compilations lifts this limitation by enabling programs to generate code at runtime.
+JIT compilations lifts this limitation by enabling programs to generate code at runtime.
 
 
 ## Example
 
 The following code snippet is a full example program.
 It generates a function which calculates the sum of all elements for a passed array.
-This is hardly a usefull application of JIT compilation, but it is small enough for a full example and still shows the benefits of COAT.
+This is hardly a good application of JIT compilation, but it shows how easy and readable code generation is with the help of COAT.
 
 ```C++
 #include <cstdio>
 #include <vector>
 #include <numeric>
 
-#include "coat/Function.h"
-#include "coat/ControlFlow.h"
+#include <coat/Function.h>
+#include <coat/ControlFlow.h>
 
 
 int main(){
@@ -38,7 +38,7 @@ int main(){
 	using func_t = uint64_t (*)(uint64_t *data, uint64_t size);
 	// context object representing the generated function
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
-	// start of the EDSL describing the code of the generated function
+	// start of the EDSL code describing the code of the generated function
 	{
 		// get function arguments as "meta-variables"
 		auto [data,size] = fn.getArguments("data", "size");
@@ -58,7 +58,7 @@ int main(){
 	// finalize code generation and get function pointer to the generated function
 	func_t foo = fn.finalize(&asmrt);
 
-	// execute the generate function
+	// execute the generated function
 	uint64_t result = foo(data.data(), data.size());
 
 	// print result

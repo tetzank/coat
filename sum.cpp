@@ -2,8 +2,8 @@
 #include <vector>
 #include <numeric>
 
-#include "coat/Function.h"
-#include "coat/ControlFlow.h"
+#include <coat/Function.h>
+#include <coat/ControlFlow.h>
 
 
 int main(){
@@ -17,7 +17,7 @@ int main(){
 	using func_t = uint64_t (*)(uint64_t *data, uint64_t size);
 	// context object representing the generated function
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
-	// start of the EDSL describing the code of the generated function
+	// start of the EDSL code describing the code of the generated function
 	{
 		// get function arguments as "meta-variables"
 		auto [data,size] = fn.getArguments("data", "size");
@@ -37,7 +37,7 @@ int main(){
 	// finalize code generation and get function pointer to the generated function
 	func_t foo = fn.finalize(&asmrt);
 
-	// execute the generate function
+	// execute the generated function
 	uint64_t result = foo(data.data(), data.size());
 
 	// print result
