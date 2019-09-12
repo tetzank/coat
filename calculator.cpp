@@ -83,7 +83,7 @@ static column_t generic(const Table &table, const char *operations){
 		result[i] = res;
 	}
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("generic: %.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
+	printf("     generic: %10.2f us\n", std::chrono::duration<double, std::micro>( t_end - t_start).count());
 	return result;
 }
 
@@ -237,7 +237,7 @@ static column_t jit1_asmjit(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit1 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit1  asmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -279,7 +279,7 @@ static column_t jit1_llvmjit(const Table &table, const char *operations){
 	fnptr(&table, result.data(), size);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit1 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit1 llvmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -308,7 +308,7 @@ static column_t jit2_asmjit(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit2 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit2  asmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -350,7 +350,7 @@ static column_t jit2_llvmjit(const Table &table, const char *operations){
 	fnptr(&table, result.data(), size);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit2 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit2 llvmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -379,7 +379,7 @@ static column_t jit3_asmjit(const Table &table, const char *operations){
 	asmrt.rt.release(fnptr);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit3 asmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit3  asmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
@@ -421,7 +421,7 @@ static column_t jit3_llvmjit(const Table &table, const char *operations){
 	fnptr(result.data(), size);
 
 	auto t_end = std::chrono::high_resolution_clock::now();
-	printf("jit3 llvmjit: %.2f us (compilation: %.2f; exec: %.2f)\n",
+	printf("jit3 llvmjit: %10.2f us (compilation: %10.2f; exec: %10.2f)\n",
 		std::chrono::duration<double, std::micro>( t_end - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_compile - t_start).count(),
 		std::chrono::duration<double, std::micro>( t_end - t_compile).count()
