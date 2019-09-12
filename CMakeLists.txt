@@ -56,6 +56,11 @@ if(ENABLE_LLVMJIT)
 	target_link_libraries(test ${LLVM_LIBRARIES})
 endif()
 
+if(ENABLE_ASMJIT)
+	add_executable(sum sum.cpp)
+	target_compile_definitions(sum PRIVATE "ENABLE_ASMJIT")
+	target_link_libraries(sum ${ASMJIT_LIBRARIES})
+endif()
 
 add_executable(calculator calculator.cpp)
 if(ENABLE_ASMJIT)
