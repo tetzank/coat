@@ -19,12 +19,12 @@ int main(){
 	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
 	// start of the EDSL describing the code of the generated function
 	{
-		// get function arguments
+		// get function arguments as "meta-variables"
 		auto [data,size] = fn.getArguments("data", "size");
 
 		// "meta-variable" for sum
 		coat::Value sum(fn, uint64_t(0), "sum");
-		// past-the-end pointer
+		// "meta-variable" for past-the-end pointer
 		auto end = data + size;
 		// loop over all elements
 		coat::for_each(fn, data, end, [&](auto &element){
