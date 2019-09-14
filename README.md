@@ -11,6 +11,7 @@ In C++, we can instruct the compiler to generate specialized code at compile-tim
 However, constant evaluation is limited as it cannot leverage runtime information.
 JIT compilations lifts this limitation by enabling programs to generate code at runtime.
 
+More details are explained in a [blog post](https://tetzank.github.io/posts/coat-edsl-for-codegen/).
 
 ## Example
 
