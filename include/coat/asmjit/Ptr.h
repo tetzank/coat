@@ -21,8 +21,14 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	::asmjit::x86::Compiler &cc; //FIXME: pointer stored in every value type
 	::asmjit::x86::Gp reg;
 
-	Ptr(::asmjit::x86::Compiler &cc, const char *name="") : cc(cc) {
+	Ptr(F &cc, const char *name="") : cc(cc) {
 		reg = cc.newIntPtr(name);
+	}
+	Ptr(F &cc, value_type *val, const char *name="") : Ptr(cc, name) {
+		*this = val;
+	}
+	Ptr(F &cc, const value_type *val, const char *name="") : Ptr(cc, name) {
+		*this = const_cast<value_type*>(val);
 	}
 	// real copy requires new register and copy of content
 	Ptr(const Ptr &other) : Ptr(other.cc) {

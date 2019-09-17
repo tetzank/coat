@@ -51,8 +51,14 @@ struct Struct<::asmjit::x86::Compiler,T>
 	::asmjit::x86::Gp reg;
 	size_t offset=0;
 
-	Struct(::asmjit::x86::Compiler &cc, const char *name="") : cc(cc) {
+	Struct(F &cc, const char *name="") : cc(cc) {
 		reg = cc.newIntPtr(name);
+	}
+	Struct(F &cc, T *val, const char *name="") : Struct(cc, name) {
+		*this = val;
+	}
+	Struct(F &cc, const T *val, const char *name="") : Struct(cc, name) {
+		*this = const_cast<T*>(val);
 	}
 
 	operator const ::asmjit::x86::Gp&() const { return reg; }

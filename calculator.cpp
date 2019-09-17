@@ -184,7 +184,7 @@ void assemble_jit3(Fn &fn, const char *operations, const Table &table){
 		auto vr_res = fn.template getValue<uint64_t>("res");
 		//vr_res = vr_table[col][vr_index];
 		const uint64_t *column = table[col];
-		auto vr_col = fn.makePointer(column, "col");
+		auto vr_col = fn.embedValue(column, "col");
 		vr_res = vr_col[vr_index];
 		while(*p){
 			switch(*p){
@@ -192,7 +192,7 @@ void assemble_jit3(Fn &fn, const char *operations, const Table &table){
 					col = p[1] - '0';
 					//vr_res += vr_table[col][vr_index];
 					const uint64_t *column = table[col];
-					auto vr_col = fn.makePointer(column, "col");
+					auto vr_col = fn.embedValue(column, "col");
 					vr_res += vr_col[vr_index];
 					break;
 				}
@@ -200,7 +200,7 @@ void assemble_jit3(Fn &fn, const char *operations, const Table &table){
 					col = p[1] - '0';
 					//vr_res -= vr_table[col][vr_index];
 					const uint64_t *column = table[col];
-					auto vr_col = fn.makePointer(column, "col");
+					auto vr_col = fn.embedValue(column, "col");
 					vr_res -= vr_col[vr_index];
 					break;
 				}

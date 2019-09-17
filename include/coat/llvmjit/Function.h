@@ -51,14 +51,13 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	//HACK: trying factory
 	template<typename T>
-	Value<::llvm::IRBuilder<>,T> getValue(const char *name="") {
-		return Value<::llvm::IRBuilder<>,T>(cc, name);
+	Value<F,T> getValue(const char *name="") {
+		return Value<F,T>(cc, name);
 	}
+	// embed value in the generated code, returns wrapper initialized to this value
 	template<typename T>
-	Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_cv_t<T>>> makePointer(T *ptr, const char *name=""){
-		Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_cv_t<T>>> vr_ptr(cc, name);
-		vr_ptr = (std::remove_cv_t<T>*)ptr;
-		return vr_ptr;
+	wrapper_type<F,T> embedValue(T value, const char *name=""){
+		return wrapper_type<F,T>(cc, value, name);
 	}
 
 	func_type finalize(runtimellvmjit &jit){

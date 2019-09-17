@@ -23,7 +23,7 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
-	Ptr(llvm::IRBuilder<> &cc, const char *name="") : cc(cc) {
+	Ptr(F &cc, const char *name="") : cc(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(value_type)){
 			case 1: memreg = allocateStackVariable(cc, llvm::Type::getInt8PtrTy (cc.getContext()), name); break;
@@ -31,6 +31,12 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 			case 4: memreg = allocateStackVariable(cc, llvm::Type::getInt32PtrTy(cc.getContext()), name); break;
 			case 8: memreg = allocateStackVariable(cc, llvm::Type::getInt64PtrTy(cc.getContext()), name); break;
 		}
+	}
+	Ptr(F &cc, value_type *val, const char *name="") : Ptr(cc, name) {
+		*this = val;
+	}
+	Ptr(F &cc, const value_type *val, const char *name="") : Ptr(cc, name) {
+		*this = const_cast<value_type*>(val);
 	}
 	// real copy requires new stack memory and copy of content
 	Ptr(const Ptr &other) : Ptr(other.cc) {

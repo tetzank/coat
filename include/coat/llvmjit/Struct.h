@@ -23,12 +23,18 @@ struct Struct<::llvm::IRBuilder<>,T>
 	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
-	Struct(llvm::IRBuilder<> &cc, const char *name="") : cc(cc) {
+	Struct(F &cc, const char *name="") : cc(cc) {
 		// create struct type in LLVM IR from T::types tuple
 		llvm::StructType *struct_type = getLLVMStructType<T>(cc.getContext());
 		llvm::Type *struct_ptr_type = llvm::PointerType::get(struct_type, 0);
 		// allocate space on stack to store pointer to struct
 		memreg = allocateStackVariable(cc, struct_ptr_type, name);
+	}
+	Struct(F &cc, T *val, const char *name="") : Struct(cc, name) {
+		*this = val;
+	}
+	Struct(F &cc, const T *val, const char *name="") : Struct(cc, name) {
+		*this = const_cast<T*>(val);
 	}
 
 	// load base pointer
