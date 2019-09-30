@@ -18,6 +18,7 @@ More details are explained in a [blog post](https://tetzank.github.io/posts/coat
 The following code snippet is a full example program.
 It generates a function which calculates the sum of all elements for a passed array.
 This is hardly a good application of JIT compilation, but it shows how easy and readable code generation is with the help of COAT.
+A more comprehensive example is provided in [another repository](https://github.com/tetzank/sig18contest), using COAT in the context of query processing.
 
 ```C++
 #include <cstdio>
