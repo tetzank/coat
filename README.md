@@ -18,7 +18,6 @@ More details are explained in a [blog post](https://tetzank.github.io/posts/coat
 The following code snippet is a full example program.
 It generates a function which calculates the sum of all elements for a passed array.
 This is hardly a good application of JIT compilation, but it shows how easy and readable code generation is with the help of COAT.
-A more comprehensive example is provided in [another repository](https://github.com/tetzank/sig18contest), using COAT in the context of query processing.
 
 ```C++
 #include <cstdio>
@@ -71,14 +70,16 @@ int main(){
 }
 ```
 
+A more comprehensive example is provided in [another repository](https://github.com/tetzank/sigmod18contest), using COAT in the context of query processing.
+
 
 ## Build Instructions
 
 The library is header-only. Small test programs are included to show how to use the library.
 
-Fetch JIT engines and build them:
+Fetch JIT engines and build them (use more or less cores by changing `-j`, LLVM can take a while...):
 ```
-$ ./buildDependencies.sh
+$ ./buildDependencies.sh -j8
 ```
 
 Then, build with cmake:
