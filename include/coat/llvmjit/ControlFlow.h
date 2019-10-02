@@ -170,6 +170,7 @@ void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
 //       on linux this is only the case when linking a shared library
 //       for an executable, -rdynamic flag has to be used during linking
 
+// calling function outside of generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
 FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_type<::llvm::IRBuilder<>,Args>... arguments){
@@ -189,6 +190,21 @@ FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_ty
 	}
 	// call
 	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments.load()... });
+
+	if constexpr(!std::is_void_v<R>){
+		// return value
+		reg_type<::llvm::IRBuilder<>,R> ret(cc, "callreturn");
+		ret = call_inst;
+		return ret;
+	}
+}
+
+// calling function in generated code
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
+FunctionCall(llvm::IRBuilder<> &cc, Function<runtimellvmjit,R(*)(Args...)> &func, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+	// call
+	llvm::CallInst *call_inst = cc.CreateCall(func.func, { arguments.load()... });
 
 	if constexpr(!std::is_void_v<R>){
 		// return value

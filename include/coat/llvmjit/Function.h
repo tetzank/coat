@@ -14,14 +14,18 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	llvm::IRBuilder<> cc;
 
-	Function(runtimellvmjit &jit) : cc(jit.context) {
+	const char *name;
+	llvm::Function *func;
+
+	Function(runtimellvmjit &jit, const char *name="func") : cc(jit.context), name(name) {
 		llvm::FunctionType *jit_func_type = llvm::FunctionType::get(
 			getLLVMType<std::remove_cv_t<R>>(jit.context),
 			{(getLLVMType<std::remove_cv_t<Args>>(jit.context))...},
 			false
 		);
 		jit.reset(); //HACK
-		jit.createFunction(jit_func_type, "func"); //FIXME: function name
+		jit.createFunction(jit_func_type, name); // function name
+		func = jit.jit_func; //FIXME: so hacky
 
 		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", jit.jit_func);
 		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", jit.jit_func);
@@ -64,7 +68,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		func_type fn;
 
 		jit.finalize();
-		fn = (func_type) jit.getSymbolAddress("func");
+		fn = (func_type) jit.getSymbolAddress(name);
 		return fn;
 	}
 

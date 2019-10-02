@@ -119,6 +119,7 @@ void for_each(::asmjit::x86::Compiler &cc, const T &container, Fn &&body){
 }
 
 
+// calling function pointer, from generated code to C++ function
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
 FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_type<::asmjit::x86::Compiler,Args>... arguments){
@@ -131,6 +132,29 @@ FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_t
 	}else{
 		reg_type<::asmjit::x86::Compiler,R> ret(cc, "");
 		::asmjit::FuncCallNode *c = cc.call((uint64_t)(void*)fnptr, ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+		// return value
+		c->setRet(0, ret);
+		return ret;
+	}
+}
+
+// calling generated function
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
+FunctionCall(::asmjit::x86::Compiler &cc, Function<runtimeasmjit,R(*)(Args...)> &func, reg_type<::asmjit::x86::Compiler,Args>... arguments){
+	if constexpr(std::is_void_v<R>){
+		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+	}else{
+		reg_type<::asmjit::x86::Compiler,R> ret(cc, "");
+		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;
 		// function parameters
 		// (c->setArg(0, arguments_0), ... ; 

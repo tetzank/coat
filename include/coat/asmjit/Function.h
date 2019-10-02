@@ -18,6 +18,8 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	::asmjit::FileLogger logger;
 
+	::asmjit::FuncNode *funcNode;
+
 	Function(runtimeasmjit *runtime){
 		code.init(runtime->rt.codeInfo());
 #if 0
@@ -27,7 +29,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		code.setErrorHandler(&runtime->errorHandler);
 		code.attach(&cc);
 
-		cc.addFunc(::asmjit::FuncSignatureT<R,Args...>());
+		funcNode = cc.addFunc(::asmjit::FuncSignatureT<R,Args...>());
 	}
 	Function(const Function &other) = delete;
 
