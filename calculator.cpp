@@ -225,10 +225,10 @@ static column_t jit1_asmjit(const Table &table, const char *operations){
 
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
-	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
+	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 	assemble_jit1(fn, operations);
 	// finalize function
-	func_t fnptr = fn.finalize(&asmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function
@@ -272,7 +272,7 @@ static column_t jit1_llvmjit(const Table &table, const char *operations){
 		}
 	}
 	// finalize function
-	func_t fnptr = fn.finalize(llvmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function
@@ -296,10 +296,10 @@ static column_t jit2_asmjit(const Table &table, const char *operations){
 
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
-	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
+	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 	assemble_jit2(fn, operations);
 	// finalize function
-	func_t fnptr = fn.finalize(&asmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function
@@ -343,7 +343,7 @@ static column_t jit2_llvmjit(const Table &table, const char *operations){
 		}
 	}
 	// finalize function
-	func_t fnptr = fn.finalize(llvmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function
@@ -367,10 +367,10 @@ static column_t jit3_asmjit(const Table &table, const char *operations){
 
 	coat::runtimeasmjit asmrt;
 	using func_t = void (*)(uint64_t *result, size_t size);
-	coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
+	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 	assemble_jit3(fn, operations, table);
 	// finalize function
-	func_t fnptr = fn.finalize(&asmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function
@@ -414,7 +414,7 @@ static column_t jit3_llvmjit(const Table &table, const char *operations){
 		}
 	}
 	// finalize function
-	func_t fnptr = fn.finalize(llvmrt);
+	func_t fnptr = fn.finalize();
 
 	auto t_compile = std::chrono::high_resolution_clock::now();
 	// execute generated function

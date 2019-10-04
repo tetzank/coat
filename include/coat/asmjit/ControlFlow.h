@@ -21,6 +21,11 @@ inline void ret(Function<runtimeasmjit,FnPtr> &ctx, VReg &reg){
 	static_assert(std::is_same_v<typename Function<runtimeasmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
 	ctx.cc.ret(reg);
 }
+template<typename FnPtr, typename VReg>
+inline void ret(InternalFunction<runtimeasmjit,FnPtr> &ctx, VReg &reg){
+	static_assert(std::is_same_v<typename InternalFunction<runtimeasmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
+	ctx.cc.ret(reg);
+}
 
 
 template<typename Fn>
@@ -146,6 +151,29 @@ FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_t
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
 FunctionCall(::asmjit::x86::Compiler &cc, Function<runtimeasmjit,R(*)(Args...)> &func, reg_type<::asmjit::x86::Compiler,Args>... arguments){
+	if constexpr(std::is_void_v<R>){
+		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+	}else{
+		reg_type<::asmjit::x86::Compiler,R> ret(cc, "");
+		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
+		int index=0;
+		// function parameters
+		// (c->setArg(0, arguments_0), ... ; 
+		((c->setArg(index++, arguments)), ...);
+		// return value
+		c->setRet(0, ret);
+		return ret;
+	}
+}
+
+// calling internal function inside generated code
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
+FunctionCall(::asmjit::x86::Compiler &cc, InternalFunction<runtimeasmjit,R(*)(Args...)> &func, reg_type<::asmjit::x86::Compiler,Args>... arguments){
 	if constexpr(std::is_void_v<R>){
 		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;

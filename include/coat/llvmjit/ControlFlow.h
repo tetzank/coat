@@ -21,6 +21,11 @@ inline void ret(Function<runtimellvmjit,FnPtr> &ctx, VReg &reg){
 	static_assert(std::is_same_v<typename Function<runtimellvmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
 	ctx.cc.CreateRet(reg.load());
 }
+template<typename FnPtr, typename VReg>
+inline void ret(InternalFunction<runtimellvmjit,FnPtr> &ctx, VReg &reg){
+	static_assert(std::is_same_v<typename InternalFunction<runtimellvmjit,FnPtr>::return_type, typename VReg::value_type>, "incompatible return types");
+	ctx.cc.CreateRet(reg.load());
+}
 
 
 template<typename Fn>
@@ -203,6 +208,21 @@ FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_ty
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
 FunctionCall(llvm::IRBuilder<> &cc, Function<runtimellvmjit,R(*)(Args...)> &func, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+	// call
+	llvm::CallInst *call_inst = cc.CreateCall(func.func, { arguments.load()... });
+
+	if constexpr(!std::is_void_v<R>){
+		// return value
+		reg_type<::llvm::IRBuilder<>,R> ret(cc, "callreturn");
+		ret = call_inst;
+		return ret;
+	}
+}
+
+// calling internal function inside generated code
+template<typename R, typename ...Args>
+std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
+FunctionCall(llvm::IRBuilder<> &cc, InternalFunction<runtimellvmjit,R(*)(Args...)> &func, reg_type<::llvm::IRBuilder<>,Args>... arguments){
 	// call
 	llvm::CallInst *call_inst = cc.CreateCall(func.func, { arguments.load()... });
 

@@ -17,7 +17,9 @@ uint32_t fib(uint32_t index){
 
 template<class Fn>
 void assemble_selfcall(Fn &fn){
-	auto [index] = fn.getArguments("index");
+	//auto [index] = fn.getArguments("index"); // clang does not like it, bindings cannot be used in lambda captures
+	auto args = fn.getArguments("index");
+	auto &index = std::get<0>(args);
 	coat::if_then_else(fn, index < 2, [&]{
 		coat::ret(fn, index);
 	}, [&]{
@@ -33,6 +35,38 @@ void assemble_crosscall(Fn &fn, Fnptr fnptr, const char *funcname){
 	//FIXME: needs symbol name of function for LLVM, that is not exposed...
 	auto ret = coat::FunctionCall(fn, fnptr, funcname, index);
 	coat::ret(fn, ret);
+}
+
+
+template<class Fn>
+void assemble_allinone(Fn &fn){
+	// signature of internal function inside generated code
+	using internalfunc_t = uint32_t (*)(uint32_t index);
+
+	// create internal function handle to call it and insert code into it later
+	auto internalCall = fn.template addFunction<internalfunc_t>("rec2");
+	// EDSL of outer function first
+	{
+		auto [index] = fn.getArguments("index");
+		auto ret = coat::FunctionCall(fn, internalCall, index);
+		coat::ret(fn, ret);
+	}
+
+	// end outer function and start internal function
+	fn.startNextFunction(internalCall);
+	// EDSL for internal function
+	{
+		//auto [index] = internalCall.getArguments("index");
+		auto args = internalCall.getArguments("index");
+		auto &index = std::get<0>(args);
+		coat::if_then_else(internalCall, index < 2, [&]{
+			coat::ret(internalCall, index);
+		}, [&]{
+			auto ret = coat::FunctionCall(internalCall, internalCall, index-1);
+			ret += coat::FunctionCall(internalCall, internalCall, index-2);
+			coat::ret(internalCall, ret);
+		});
+	}
 }
 
 
@@ -59,13 +93,13 @@ int main(int argc, char *argv[]){
 #ifdef ENABLE_ASMJIT
 	{
 		// context object representing the generated function
-		coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 		assemble_selfcall(fn);
 		// finalize code generation and get function pointer to the generated function
-		func_t foo = fn.finalize(&asmrt);
+		func_t foo = fn.finalize();
 		// execute the generated function
 		uint32_t result = foo(index);
-		printf("result: %u; expected: %u\n", result, expected);
+		printf("selfcall asmjit:\nresult: %u; expected: %u\n", result, expected);
 	}
 #endif
 #ifdef ENABLE_LLVMJIT
@@ -74,39 +108,63 @@ int main(int argc, char *argv[]){
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
 		assemble_selfcall(fn);
 		// finalize code generation and get function pointer to the generated function
-		func_t foo = fn.finalize(llvmrt);
+		func_t foo = fn.finalize();
 		// execute the generated function
 		uint32_t result = foo(index);
-		printf("result: %u; expected: %u\n", result, expected);
+		printf("selfcall llvm:\nresult: %u; expected: %u\n", result, expected);
 	}
 #endif
 
 #ifdef ENABLE_ASMJIT
 	{
-		coat::Function<coat::runtimeasmjit,func_t> fnrec(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_t> fnrec(asmrt);
 		assemble_selfcall(fnrec);
-		func_t foorec = fnrec.finalize(&asmrt);
+		func_t foorec = fnrec.finalize();
 
-		coat::Function<coat::runtimeasmjit,func_t> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 		assemble_crosscall(fn, foorec, "");
-		func_t foo = fn.finalize(&asmrt);
+		func_t foo = fn.finalize();
 		// execute the generated function
 		uint32_t result = foo(index);
-		printf("result: %u; expected: %u\n", result, expected);
+		printf("crosscall asmjit:\nresult: %u; expected: %u\n", result, expected);
 	}
 #endif
 #ifdef ENABLE_LLVMJIT
 	{
 		coat::Function<coat::runtimellvmjit,func_t> fnrec(llvmrt, "rec");
 		assemble_selfcall(fnrec);
-		func_t foorec = fnrec.finalize(llvmrt);
+		func_t foorec = fnrec.finalize();
 
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller");
 		assemble_crosscall(fn, foorec, "rec");
-		func_t foo = fn.finalize(llvmrt);
+		func_t foo = fn.finalize();
 		// execute the generated function
 		uint32_t result = foo(index);
-		printf("result: %u; expected: %u\n", result, expected);
+		printf("crosscall llvm:\nresult: %u; expected: %u\n", result, expected);
+	}
+#endif
+#ifdef ENABLE_ASMJIT
+	{
+		// context object representing the generated function
+		coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+		assemble_allinone(fn);
+		// finalize code generation and get function pointer to the generated function
+		func_t foo = fn.finalize();
+		// execute the generated function
+		uint32_t result = foo(index);
+		printf("allinone asmjit:\nresult: %u; expected: %u\n", result, expected);
+	}
+#endif
+#ifdef ENABLE_LLVMJIT
+	{
+		// context object representing the generated function
+		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller2");
+		assemble_allinone(fn);
+		// finalize code generation and get function pointer to the generated function
+		func_t foo = fn.finalize();
+		// execute the generated function
+		uint32_t result = foo(index);
+		printf("allinone llvmjit:\nresult: %u; expected: %u\n", result, expected);
 	}
 #endif
 

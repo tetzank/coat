@@ -94,6 +94,9 @@ inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
 template<typename T, typename F>
 struct Function;
 
+template<typename T, typename F>
+struct InternalFunction;
+
 } // namespace
 
 

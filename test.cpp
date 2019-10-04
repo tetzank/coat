@@ -128,7 +128,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)();
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		coat::Value vr_val3(fn, 0, "val");
 		coat::Value<::asmjit::x86::Compiler,int> vr_val(fn, "val");
 		vr_val = 0;
@@ -137,7 +137,7 @@ int main(int argc, char **argv){
 		coat::ret(fn, vr_val);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr();
 		printf("initialization test:  asmjit; result: %i\n", result);
@@ -157,7 +157,7 @@ int main(int argc, char **argv){
 		coat::ret(fn, vr_val);
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr();
 		printf("initialization test: llvmjit; result: %i\n", result);
@@ -168,11 +168,11 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		assemble_sum_foreach(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with for_each and  asmjit: %i\n", result);
@@ -187,7 +187,7 @@ int main(int argc, char **argv){
 		assemble_sum_foreach(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with for_each and llvmjit: %i\n", result);
@@ -198,11 +198,11 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		assemble_sum_counter(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with loop_while and  asmjit: %i\n", result);
@@ -217,7 +217,7 @@ int main(int argc, char **argv){
 		assemble_sum_counter(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with loop_while and llvmjit: %i\n", result);
@@ -228,11 +228,11 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(const int*,size_t);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		assemble_condsum_loop(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with loop_while and  asmjit: %i\n", result);
@@ -247,7 +247,7 @@ int main(int argc, char **argv){
 		assemble_condsum_loop(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(array, cnt);
 		printf("result with loop_while and llvmjit: %i\n", result);
@@ -259,11 +259,11 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = uint32_t (*)(triple*);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		assemble_getStructElement(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(&t);
 		printf("getStructElement  asmjit: %i\n", result);
@@ -280,7 +280,7 @@ int main(int argc, char **argv){
 		llvmrt.print("test-triple-dump.ll");
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr(&t);
 		printf("getStructElement llvmjit: %i\n", result);
@@ -296,11 +296,11 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = int (*)(wrapped_vector<int>*);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		assemble_vectorsum(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr((wrapped_vector<int>*)&vec);
 		printf("vectorsum  asmjit: %i\n", result);
@@ -315,7 +315,7 @@ int main(int argc, char **argv){
 		assemble_vectorsum(fn);
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		int result = fnptr((wrapped_vector<int>*)&vec);
 		printf("vectorsum llvmjit: %i\n", result);
@@ -331,7 +331,7 @@ int main(int argc, char **argv){
 #ifdef ENABLE_ASMJIT
 	{
 		using func_type = size_t (*)(pod_vector<int>*);
-		coat::Function<coat::runtimeasmjit,func_type> fn(&asmrt);
+		coat::Function<coat::runtimeasmjit,func_type> fn(asmrt);
 		auto args = fn.getArguments("podvec");
 		auto &vr_podvec = std::get<0>(args);
 		auto vr_size = vr_podvec.size();
@@ -345,7 +345,7 @@ int main(int argc, char **argv){
 		coat::ret(fn, vr_size);
 
 		// finalize function
-		func_type fnptr = fn.finalize(&asmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		size_t result = fnptr(&pod_vec);
 		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
@@ -382,7 +382,7 @@ int main(int argc, char **argv){
 		llvmrt.print("test-podvec-dump.ll");
 
 		// finalize function
-		func_type fnptr = fn.finalize(llvmrt);
+		func_type fnptr = fn.finalize();
 		// execute generated function
 		size_t result = fnptr(&pod_vec);
 		printf("podvec  asmjit: %lu, last element: %i\n", result, pod_vec.back());
