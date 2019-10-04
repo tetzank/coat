@@ -63,7 +63,7 @@ void if_then_else(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Th
 	llvm::Function *fn = bb_current->getParent();
 	llvm::BasicBlock *bb_then = llvm::BasicBlock::Create(cc.getContext(), "then", fn);
 	llvm::BasicBlock *bb_else = llvm::BasicBlock::Create(cc.getContext(), "else", fn);
-	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
+	llvm::BasicBlock *bb_after = nullptr;
 	// check
 	jump(cc, cond, bb_then, bb_else); // if not jump to else
 
@@ -72,6 +72,7 @@ void if_then_else(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Th
 	// if then() already emitted a ret, don't emit branch
 	// see if_then() for details
 	if(cc.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
+		bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
 		jump(cc, bb_after);
 	}
 
@@ -79,11 +80,16 @@ void if_then_else(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, Th
 	else_();
 	// if else_() already emitted a ret, don't emit branch
 	if(cc.GetInsertBlock()->back().getOpcode() != llvm::Instruction::Ret){
+		if(bb_after == nullptr){
+			bb_after = llvm::BasicBlock::Create(cc.getContext(), "after", fn);
+		}
 		jump(cc, bb_after);
 	}
 
 	// label after then branch
-	cc.SetInsertPoint(bb_after);
+	if(bb_after){
+		cc.SetInsertPoint(bb_after);
+	}
 }
 
 

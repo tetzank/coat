@@ -70,6 +70,22 @@ void assemble_allinone(Fn &fn){
 }
 
 
+static void verifyAndOptimize(coat::runtimellvmjit &llvmrt, const char *fname1, const char *fname2){
+	llvmrt.print(fname1);
+	if(!llvmrt.verifyFunctions()){
+		puts("verification failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
+	}
+	if(llvmrt.getOptLevel() > 0){
+		llvmrt.optimize();
+		llvmrt.print(fname2);
+		if(!llvmrt.verifyFunctions()){
+			puts("verification after optimization failed. aborting.");
+			exit(EXIT_FAILURE); //FIXME: better error handling
+		}
+	}
+}
+
 int main(int argc, char *argv[]){
 	if(argc < 2){
 		puts("argument required: index in fibonacci sequence");
@@ -107,6 +123,7 @@ int main(int argc, char *argv[]){
 		// context object representing the generated function
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
 		assemble_selfcall(fn);
+		verifyAndOptimize(llvmrt, "selfcall.ll", "s elfcall_opt.ll");
 		// finalize code generation and get function pointer to the generated function
 		func_t foo = fn.finalize();
 		// execute the generated function
@@ -137,6 +154,9 @@ int main(int argc, char *argv[]){
 
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller");
 		assemble_crosscall(fn, foorec, "rec");
+
+		verifyAndOptimize(llvmrt, "crosscall.ll", "crosscall_opt.ll");
+
 		func_t foo = fn.finalize();
 		// execute the generated function
 		uint32_t result = foo(index);
@@ -160,6 +180,9 @@ int main(int argc, char *argv[]){
 		// context object representing the generated function
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller2");
 		assemble_allinone(fn);
+
+		verifyAndOptimize(llvmrt, "allinone.ll", "allinone_opt.ll");
+
 		// finalize code generation and get function pointer to the generated function
 		func_t foo = fn.finalize();
 		// execute the generated function
