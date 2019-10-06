@@ -109,10 +109,42 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 		}else{
 			store( cc.CreateMul(load(), llvm::ConstantInt::get(type(), constant)) );
 		}
-		
 		return *this;
 	}
-	//TODO: /=, %=
+
+	Value &operator/=(const Value &other){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateSDiv(load(), other.load()) );
+		}else{
+			store( cc.CreateUDiv(load(), other.load()) );
+		}
+		return *this;
+	}
+	Value &operator/=(int constant){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateSDiv(load(), llvm::ConstantInt::get(type(), constant)) );
+		}else{
+			store( cc.CreateUDiv(load(), llvm::ConstantInt::get(type(), constant)) );
+		}
+		return *this;
+	}
+	
+	Value &operator%=(const Value &other){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateSRem(load(), other.load()) );
+		}else{
+			store( cc.CreateURem(load(), other.load()) );
+		}
+		return *this;
+	}
+	Value &operator%=(int constant){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateSRem(load(), llvm::ConstantInt::get(type(), constant)) );
+		}else{
+			store( cc.CreateURem(load(), llvm::ConstantInt::get(type(), constant)) );
+		}
+		return *this;
+	}
 
 	Value &operator+=(const Value &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
 	Value &operator+=(int constant){ store( cc.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
@@ -140,6 +172,8 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value operator<<(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
 	Value operator>>(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
 	Value operator* (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= amount; return tmp; }
+	Value operator/ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  /= amount; return tmp; }
+	Value operator% (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  %= amount; return tmp; }
 	Value operator+ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
 	Value operator- (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
 	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
@@ -147,6 +181,9 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value operator^ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
 	Value operator<<(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= other; return tmp; }
 	Value operator>>(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= other; return tmp; }
+	Value operator* (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= other; return tmp; }
+	Value operator/ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  /= other; return tmp; }
+	Value operator% (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  %= other; return tmp; }
 	Value operator+ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += other; return tmp; }
 	Value operator- (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= other; return tmp; }
 	Value operator& (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= other; return tmp; }
