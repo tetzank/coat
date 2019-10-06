@@ -21,12 +21,12 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	::asmjit::FuncNode *funcNode;
 
-	Function(runtimeasmjit &asmrt) : asmrt(asmrt) {
+	Function(runtimeasmjit &asmrt, bool dumpCode=false) : asmrt(asmrt) {
 		code.init(asmrt.rt.codeInfo());
-#if 0
-		logger.setFile(stdout);
-		code.setLogger(&logger);
-#endif
+		if(dumpCode){
+			logger.setFile(stdout);
+			code.setLogger(&logger);
+		}
 		code.setErrorHandler(&asmrt.errorHandler);
 		code.attach(&cc);
 
