@@ -1,6 +1,7 @@
 #ifndef COAT_STRUCT_H_
 #define COAT_STRUCT_H_
 
+#include <tuple>
 
 namespace coat {
 
