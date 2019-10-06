@@ -238,11 +238,15 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 				break;
 
 			default: {
-				if constexpr(std::is_signed_v<T>){
-					cc.imul(reg, ::asmjit::imm(constant));
+				if(is_power_of_two(constant)){
+					operator<<=(clog2(constant));
 				}else{
-					Value temp(cc, T(constant), "constant");
-					operator*=(temp);
+					if constexpr(std::is_signed_v<T>){
+						cc.imul(reg, ::asmjit::imm(constant));
+					}else{
+						Value temp(cc, T(constant), "constant");
+						operator*=(temp);
+					}
 				}
 			}
 		}
@@ -272,6 +276,15 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 	// immediate not possible in div or idiv
+	Value &operator/=(int constant){
+		if(is_power_of_two(constant)){
+			operator>>=(clog2(constant));
+		}else{
+			Value temp(cc, T(constant), "constant");
+			operator/=(temp);
+		}
+		return *this;
+	}
 
 	Value &operator%=(const Value &other){
 		static_assert(sizeof(T) > 1, "division of byte type currently not supported");
@@ -302,6 +315,15 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 	// immediate not possible in div or idiv
+	Value &operator%=(int constant){
+		if(is_power_of_two(constant)){
+			operator&=(constant - 1);
+		}else{
+			Value temp(cc, T(constant), "constant");
+			operator%=(temp);
+		}
+		return *this;
+	}
 
 	Value &operator+=(const Value &other){      cc.add(reg, other); return *this; }
 	Value &operator+=(int constant){            cc.add(reg, ::asmjit::imm(constant)); return *this; }
@@ -329,6 +351,8 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	Value operator<<(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
 	Value operator>>(int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
 	Value operator* (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= amount; return tmp; }
+	Value operator/ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  /= amount; return tmp; }
+	Value operator% (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  %= amount; return tmp; }
 	Value operator+ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
 	Value operator- (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
 	Value operator& (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
@@ -336,6 +360,9 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	Value operator^ (int amount) const { Value tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
 	Value operator<<(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp <<= other; return tmp; }
 	Value operator>>(const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp >>= other; return tmp; }
+	Value operator* (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  *= other; return tmp; }
+	Value operator/ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  /= other; return tmp; }
+	Value operator% (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  %= other; return tmp; }
 	Value operator+ (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  += other; return tmp; }
 	Value operator- (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  -= other; return tmp; }
 	Value operator& (const Value &other) const { Value tmp(cc, "tmp"); tmp = *this; tmp  &= other; return tmp; }
