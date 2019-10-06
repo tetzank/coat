@@ -29,17 +29,7 @@ struct Ref<::llvm::IRBuilder<>,T> {
 	}
 
 	// operators creating temporary virtual registers
-	T operator<<(int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
-	T operator>>(int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
-	T operator+ (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
-	T operator- (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
-	T operator& (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
-	T operator| (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  |= amount; return tmp; }
-	T operator^ (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
-
-	//T operator*(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp *= other; return tmp; }
-	//T operator/(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp /= other; return tmp; }
-	//T operator%(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp %= other; return tmp; }
+	OPERATORS_WITH_TEMPORARIES(T)
 
 	// comparisons
 	// swap sides of operands and comparison, not needed for assembly, but avoids code duplication in wrapper

@@ -2,6 +2,7 @@
 #define COAT_ASMJIT_REF_H_
 
 #include "coat/Ref.h"
+#include "coat/operator_helper.h"
 
 #include <asmjit/asmjit.h>
 
@@ -35,18 +36,7 @@ struct Ref<::asmjit::x86::Compiler,T> {
 	// arithmetic + assignment skipped for now
 
 	// operators creating temporary virtual registers
-	T operator<<(int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp <<= amount; return tmp; }
-	T operator>>(int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp >>= amount; return tmp; }
-	T operator+ (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  += amount; return tmp; }
-	T operator- (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  -= amount; return tmp; }
-	T operator& (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  &= amount; return tmp; }
-	T operator| (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  |= amount; return tmp; }
-	T operator^ (int amount) const { T tmp(cc, "tmp"); tmp = *this; tmp  ^= amount; return tmp; }
-
-	T operator*(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp *= other; return tmp; }
-	T operator/(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp /= other; return tmp; }
-	T operator%(const T &other) const { T tmp(cc, "tmp"); tmp = *this; tmp %= other; return tmp; }
-
+	OPERATORS_WITH_TEMPORARIES(T)
 
 	// comparisons
 	// swap sides of operands and comparison, not needed for assembly, but avoids code duplication in wrapper
