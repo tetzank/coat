@@ -75,20 +75,19 @@ struct Struct<::llvm::IRBuilder<>,T>
 
 	template<int I>
 	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value() const {
-		wrapper_type<F,std::tuple_element_t<I, typename T::types>> ret(cc);
+		using type = std::tuple_element_t<I, typename T::types>;
+		wrapper_type<F,type> ret(cc);
 		llvm::Value *member_addr = cc.CreateStructGEP(load(), I);
-		if constexpr(std::is_arithmetic_v<std::remove_pointer_t<std::tuple_element_t<I, typename T::types>>>){
+		if constexpr(std::is_arithmetic_v<std::remove_pointer_t<type>>){
+			llvm::Value *member = cc.CreateLoad(member_addr, "memberload");
+			ret.store(member);
+		}else if constexpr(std::is_pointer_v<type>){
+			// pointer to struct, load pointer
 			llvm::Value *member = cc.CreateLoad(member_addr, "memberload");
 			ret.store(member);
 		}else{
-			if constexpr(std::is_pointer_v<std::tuple_element_t<I, typename T::types>>){
-				// pointer to struct, load pointer
-				llvm::Value *member = cc.CreateLoad(member_addr, "memberload");
-				ret.store(member);
-			}else{
-				// nested struct, just move "offset"
-				ret.store( member_addr );
-			}
+			// nested struct or array, just move "offset"
+			ret.store( member_addr );
 		}
 		return ret;
 	}

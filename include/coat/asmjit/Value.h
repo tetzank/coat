@@ -59,6 +59,11 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 
+	// copy ctor for ref, basically loads value from memory and stores in register
+	Value(const Ref<F,Value> &other) : Value(other.cc) {
+		*this = other;
+	}
+
 	// explicit type conversion, assignment
 	// always makes a copy
 	// FIXME: implicit conversion between signed and unsigned, but not between types of same size ...
@@ -392,6 +397,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 // deduction guides
 template<typename T> Value(::asmjit::x86::Compiler&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
 template<typename FnPtr, typename T> Value(Function<runtimeasmjit,FnPtr>&, T val, const char *) -> Value<::asmjit::x86::Compiler,T>;
+template<typename T> Value(const Ref<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>>&) -> Value<::asmjit::x86::Compiler,T>;
 
 } // namespace
 

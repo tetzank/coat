@@ -23,9 +23,10 @@ using reg_type = std::conditional_t<std::is_pointer_v<T>,
 						Value<F,std::remove_cv_t<T>>
 				>;
 
+// decay - converts array types to pointer types
 template<typename F, typename T>
-using wrapper_type = std::conditional_t<std::is_arithmetic_v<std::remove_pointer_t<T>>,
-						reg_type<F,T>,
+using wrapper_type = std::conditional_t<std::is_arithmetic_v<std::remove_pointer_t<std::decay_t<T>>>,
+						reg_type<F,std::decay_t<T>>,
 						Struct<F,std::remove_cv_t<std::remove_pointer_t<T>>>
 					>;
 
@@ -48,7 +49,7 @@ inline llvm::StructType *getLLVMStructType(llvm::LLVMContext &ctx){
 }
 
 
-//TODO: a static member function in Value<T>, Ptr<T>, VStruct<T> would be better
+//TODO: a static member function in Value<T>, Ptr<T>, Struct<T> would be better
 //      the ::type() is there already, but cannot be static
 template<typename T>
 inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
@@ -67,6 +68,9 @@ inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
 		}else{
 			return llvm::PointerType::get(getLLVMStructType<base_type>(ctx), 0);
 		}
+	}else if constexpr(std::is_array_v<T>){
+		static_assert(std::rank_v<T> == 1, "multidimensional arrays are not supported");
+		return llvm::ArrayType::get(getLLVMType<std::remove_extent_t<T>>(ctx), std::extent_v<T>);
 	}else{
 		if constexpr(std::is_same_v<T,void>){
 			return llvm::Type::getVoidTy(ctx);

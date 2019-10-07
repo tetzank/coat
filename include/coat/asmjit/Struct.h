@@ -88,28 +88,31 @@ struct Struct<::asmjit::x86::Compiler,T>
 
 	template<int I>
 	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value() const {
-		wrapper_type<F,std::tuple_element_t<I, typename T::types>> ret(cc);
-		if constexpr(std::is_arithmetic_v<std::remove_pointer_t<std::tuple_element_t<I, typename T::types>>>){
+		using type = std::tuple_element_t<I, typename T::types>;
+		wrapper_type<F,type> ret(cc);
+		if constexpr(std::is_array_v<type>){
+			// array decay to pointer, just add offset to struct pointer
+			//TODO: could just use struct pointer with fixed offset, no need for new register, similar to nested struct
+			cc.lea(ret.reg, ::asmjit::x86::ptr(reg, offset_of_v<I,typename T::types> + offset));
+		}else if constexpr(std::is_arithmetic_v<std::remove_pointer_t<type>>){
 #if 0
 			//FIXME: VRegMem not defined for pointer types currently
 			ret = get_reference<I>();
 #else
-			switch(sizeof(std::tuple_element_t<I, typename T::types>)){
+			switch(sizeof(type)){
 				case 1: cc.mov(ret.reg, ::asmjit::x86:: byte_ptr(reg, offset_of_v<I,typename T::types> + offset)); break;
 				case 2: cc.mov(ret.reg, ::asmjit::x86:: word_ptr(reg, offset_of_v<I,typename T::types> + offset)); break;
 				case 4: cc.mov(ret.reg, ::asmjit::x86::dword_ptr(reg, offset_of_v<I,typename T::types> + offset)); break;
 				case 8: cc.mov(ret.reg, ::asmjit::x86::qword_ptr(reg, offset_of_v<I,typename T::types> + offset)); break;
 			}
 #endif
+		}else if constexpr(std::is_pointer_v<type>){
+			// pointer to struct, load pointer
+			cc.mov(ret.reg, ::asmjit::x86::qword_ptr(reg, offset_of_v<I,typename T::types> + offset));
 		}else{
-			if constexpr(std::is_pointer_v<std::tuple_element_t<I, typename T::types>>){
-				// pointer to struct, load pointer
-				cc.mov(ret.reg, ::asmjit::x86::qword_ptr(reg, offset_of_v<I,typename T::types> + offset));
-			}else{
-				// nested struct
-				ret.reg = reg; // pass ptr register
-				ret.offset = offset + offset_of_v<I,typename T::types>; // change offset
-			}
+			// nested struct
+			ret.reg = reg; // pass ptr register
+			ret.offset = offset + offset_of_v<I,typename T::types>; // change offset
 		}
 		return ret;
 	}

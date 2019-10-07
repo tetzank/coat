@@ -41,6 +41,11 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	// move assign, just take stack memory location, copy of wrapper object
 	Value &operator=(const Value &&other){ memreg = other.memreg; return *this; }
 
+	// copy ctor for ref
+	Value(const Ref<F,Value> &other) : Value(other.cc) {
+		*this = other;
+	}
+
 	// explicit type conversion, assignment
 	// always makes a copy
 	// FIXME: implicit conversion between signed and unsigned, but not between types of same size ...
@@ -212,6 +217,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 // deduction guides
 template<typename T> Value(::llvm::IRBuilder<>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
 template<typename FnPtr, typename T> Value(Function<runtimellvmjit,FnPtr>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
+template<typename T> Value(const Ref<llvm::IRBuilder<>,Value<llvm::IRBuilder<>,T>>&) -> Value<llvm::IRBuilder<>,T>;
 
 } // namespace
 
