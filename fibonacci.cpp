@@ -79,10 +79,6 @@ static void verifyAndOptimize(coat::runtimellvmjit &llvmrt, const char *fname1, 
 	if(llvmrt.getOptLevel() > 0){
 		llvmrt.optimize();
 		llvmrt.print(fname2);
-		if(!llvmrt.verifyFunctions()){
-			puts("verification after optimization failed. aborting.");
-			exit(EXIT_FAILURE); //FIXME: better error handling
-		}
 	}
 }
 
@@ -123,7 +119,7 @@ int main(int argc, char *argv[]){
 		// context object representing the generated function
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
 		assemble_selfcall(fn);
-		verifyAndOptimize(llvmrt, "selfcall.ll", "s elfcall_opt.ll");
+		verifyAndOptimize(llvmrt, "selfcall.ll", "selfcall_opt.ll");
 		// finalize code generation and get function pointer to the generated function
 		func_t foo = fn.finalize();
 		// execute the generated function

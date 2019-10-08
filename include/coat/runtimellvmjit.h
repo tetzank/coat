@@ -25,6 +25,7 @@
 
 #include <llvm/ExecutionEngine/JITEventListener.h>
 
+#include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
 #include <llvm/Transforms/InstCombine/InstCombine.h>
@@ -123,9 +124,10 @@ public:
 		//DEBUG - END
 #endif
 	}
-	void createFunction(llvm::FunctionType *jit_func_type, const char *name){
-		jit_func = llvm::Function::Create(jit_func_type, llvm::Function::ExternalLinkage, name, module.get());
-		functions.push_back(jit_func);
+	llvm::Function *createFunction(llvm::FunctionType *jit_func_type, const char *name, llvm::GlobalValue::LinkageTypes linkage=llvm::Function::ExternalLinkage){
+		llvm::Function *func = llvm::Function::Create(jit_func_type, linkage, name, module.get());
+		functions.push_back(func);
+		return func;
 	}
 
 #if 0
@@ -177,12 +179,16 @@ public:
 
 	void optimize(){
 		if(optLevel > 0){
-#if 1
 			llvm::PassManagerBuilder pm_builder;
 			pm_builder.OptLevel = optLevel;
 			pm_builder.SizeLevel = 0;
+			//pm_builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
+			pm_builder.Inliner = llvm::createFunctionInliningPass(optLevel, 0, false);
 			pm_builder.LoopVectorize = true;
 			pm_builder.SLPVectorize = true;
+
+			//pm_builder.VerifyInput = true;
+			pm_builder.VerifyOutput = true;
 
 			llvm::legacy::FunctionPassManager function_pm(module.get());
 			llvm::legacy::PassManager module_pm;
@@ -194,24 +200,6 @@ public:
 				function_pm.run(*f);
 			}
 			module_pm.run(*module);
-#else
-			//FIXME: legacy namespace implies that there is a newer way to do it
-			llvm::legacy::FunctionPassManager function_pm(module.get());
-			// Do simple "peephole" optimizations and bit-twiddling optzns.
-			function_pm.add(llvm::createInstructionCombiningPass());
-			// Reassociate expressions.
-			function_pm.add(llvm::createReassociatePass());
-			// Eliminate Common SubExpressions.
-			function_pm.add(llvm::createGVNPass());
-			// Simplify the control flow graph (deleting unreachable blocks, etc).
-			function_pm.add(llvm::createCFGSimplificationPass());
-			// init
-			function_pm.doInitialization();
-			//FIXME: do all the initialization at start, not per call
-
-			// Optimize the function.
-			function_pm.run(*jit_func);
-#endif
 		}
 	}
 

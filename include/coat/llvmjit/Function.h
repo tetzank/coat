@@ -25,8 +25,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 			false
 		);
 		jit.reset(); //HACK
-		jit.createFunction(jit_func_type, name); // function name
-		func = jit.jit_func; //FIXME: so hacky
+		func = jit.createFunction(jit_func_type, name); // function name
+		//FIXME: so hacky
+		jit.jit_func = func;
 
 		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", jit.jit_func);
 		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", jit.jit_func);
@@ -45,10 +46,14 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	template<class IFunc>
 	void startNextFunction(const IFunc &internalCall){
+		jit.jit_func = internalCall.func;
 		// start new basic block in internal function
-		llvm::BasicBlock *bb_init = llvm::BasicBlock::Create(cc.getContext(), "init", internalCall.func);
+		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(cc.getContext(), "prolog", internalCall.func);
+		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(cc.getContext(), "start", internalCall.func);
 		// start inserting here
-		cc.SetInsertPoint(bb_init);
+		cc.SetInsertPoint(bb_prolog);
+		cc.CreateBr(bb_start);
+		cc.SetInsertPoint(bb_start);
 	}
 
 
@@ -110,8 +115,7 @@ struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
 			{(getLLVMType<std::remove_cv_t<Args>>(jit.context))...},
 			false
 		);
-		jit.createFunction(func_type, name); // function name
-		func = jit.jit_func; //FIXME: so hacky
+		func = jit.createFunction(func_type, name, llvm::Function::InternalLinkage); // function name
 	}
 	InternalFunction(const InternalFunction &) = delete;
 
