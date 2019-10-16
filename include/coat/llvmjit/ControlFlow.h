@@ -11,6 +11,16 @@ inline void jump(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, llv
 	cond.compare();
 	cond.jump(bb_success, bb_fail);
 }
+inline void jump(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, llvm::BasicBlock *bb_success){
+	llvm::BasicBlock *bb_current = cc.GetInsertBlock();
+	llvm::Function *fn = bb_current->getParent();
+	llvm::BasicBlock *bb_fallthrough = llvm::BasicBlock::Create(cc.getContext(), "fallthrough", fn);
+
+	cond.compare();
+	cond.jump(bb_success, bb_fallthrough);
+	// simulate implicit fallthrough
+	cc.SetInsertPoint(bb_fallthrough);
+}
 
 
 inline void ret(::llvm::IRBuilder<> &cc){
