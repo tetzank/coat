@@ -71,6 +71,27 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 		return *this;
 	}
 
+	// explicit conversion, no assignment, new value/temporary
+	//TODO: decide on one style and delete other
+	template<typename O>
+	Value<F,O> narrow(){
+		static_assert(sizeof(O) < sizeof(T), "narrowing conversion called on wrong types");
+		Value<F,O> tmp(cc, "narrowtmp");
+		tmp.store( cc.CreateTrunc(load(), tmp.type()) );
+		return tmp;
+	}
+	template<typename O>
+	Value<F,O> widen(){
+		static_assert(sizeof(O) > sizeof(T), "widening conversion called on wrong types");
+		Value<F,O> tmp(cc, "widentmp");
+		if constexpr(std::is_signed_v<T>){
+			tmp.store( cc.CreateSExt(load(), tmp.type()) );
+		}else{
+			tmp.store( cc.CreateZExt(load(), tmp.type()) );
+		}
+		return tmp;
+	}
+
 	// assignment
 	Value &operator=(const Value &other){ store( other.load() ); return *this; }
 	Value &operator=(int value){ store( llvm::ConstantInt::get(type(), value) ); return *this; }

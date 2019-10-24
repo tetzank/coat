@@ -121,6 +121,42 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 
+	// explicit conversion, no assignment, new value/temporary
+	//TODO: decide on one style and delete other
+	template<typename O>
+	Value<F,O> narrow(){
+		static_assert(sizeof(O) < sizeof(T), "narrowing conversion called on wrong types");
+		Value<F,O> tmp(cc, "narrowtmp");
+		// copy from register
+		switch(sizeof(O)){
+			case 1: cc.mov(tmp.reg, reg.r8 ()); break;
+			case 2: cc.mov(tmp.reg, reg.r16()); break;
+			case 4: cc.mov(tmp.reg, reg.r32()); break;
+		}
+		return tmp;
+	}
+	template<typename O>
+	Value<F,O> widen(){
+		static_assert(sizeof(O) > sizeof(T), "widening conversion called on wrong types");
+		Value<F,O> tmp(cc, "widentmp");
+		if constexpr(std::is_signed_v<T>){
+			if(sizeof(O)==8 && sizeof(T)==4){
+				cc.movsxd(tmp.reg, reg);
+			}else{
+				cc.movsx(tmp.reg, reg);
+			}
+		}else{
+			// movzx only from 8/16 to whatever, otherwise use normal move as it implicitly zero's upper 32-bit
+			if(sizeof(T) <= 2){
+				cc.movzx(tmp.reg, reg);
+			}else{
+				// write to 32-bit register, upper half zero'd
+				cc.mov(tmp.reg.r32(), reg);
+			}
+		}
+		return tmp;
+	}
+
 	// assignment
 	Value &operator=(const Value &other){
 		cc.mov(reg, other);
