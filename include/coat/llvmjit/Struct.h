@@ -85,8 +85,10 @@ struct Struct<::llvm::IRBuilder<>,T>
 			// pointer to struct, load pointer
 			llvm::Value *member = cc.CreateLoad(member_addr, "memberload");
 			ret.store(member);
+		}else if constexpr(std::is_array_v<type>){
+			ret.store( cc.CreateStructGEP(member_addr, 0) );
 		}else{
-			// nested struct or array, just move "offset"
+			// nested struct, just move "offset"
 			ret.store( member_addr );
 		}
 		return ret;
