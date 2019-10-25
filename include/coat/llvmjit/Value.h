@@ -103,11 +103,34 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value &operator=(llvm::Value *val){ store( val ); return *this; }
 
 	// special handling of bit tests, for convenience and performance
+	void bit_test(const Value &bit, Label<F> &label, bool jump_on_set=true) const {
+		Value testbit(cc, value_type(1), "testbit");
+		testbit <<= bit % 64;
+		testbit &= *this; // test bit
+		if(jump_on_set){
+			jump(cc, testbit != 0, label);
+		}else{
+			jump(cc, testbit == 0, label);
+		}
+	}
+
 	void bit_test_and_set(const Value &bit, Label<F> &label, bool jump_on_set=true){
 		Value testbit(cc, value_type(1), "testbit");
 		testbit <<= bit % 64;
 		auto cond = testbit & *this; // test bit
 		operator|=(testbit); // set bit
+		if(jump_on_set){
+			jump(cc, cond != 0, label);
+		}else{
+			jump(cc, cond == 0, label);
+		}
+	}
+
+	void bit_test_and_reset(const Value &bit, Label<F> &label, bool jump_on_set=true){
+		Value testbit(cc, value_type(1), "testbit");
+		testbit <<= bit % 64;
+		auto cond = testbit & *this; // test bit
+		operator&=(~testbit); // reset bit
 		if(jump_on_set){
 			jump(cc, cond != 0, label);
 		}else{
@@ -208,7 +231,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value &operator^=(int constant){              store( cc.CreateXor(load(), constant) ); return *this; }
 	Value &operator^=(const Ref<F,Value> &other){ store( cc.CreateXor(load(), other.load()) ); return *this; }
 
-	//Value &operator~(){ cc.not_(reg); return *this; }
+	Value &operator~(){ store( cc.CreateNot(load()) ); return *this; }
 
 	// operators creatting temporary
 	OPERATORS_WITH_TEMPORARIES(Value)
