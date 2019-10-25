@@ -8,6 +8,9 @@
 //#include "Ref.h"
 //#include "Ptr.h"
 
+#include "coat/Label.h"
+
+
 namespace coat {
 
 template<typename T>
@@ -98,6 +101,19 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value &operator=(const Ref<F,Value> &other){ store( other.load() ); return *this; }
 	//FIXME: takes any type
 	Value &operator=(llvm::Value *val){ store( val ); return *this; }
+
+	// special handling of bit tests, for convenience and performance
+	void bit_test_and_set(const Value &bit, Label<F> &label, bool jump_on_set=true){
+		Value testbit(cc, value_type(1), "testbit");
+		testbit <<= bit % 64;
+		auto cond = testbit & *this; // test bit
+		operator|=(testbit); // set bit
+		if(jump_on_set){
+			jump(cc, cond != 0, label);
+		}else{
+			jump(cc, cond == 0, label);
+		}
+	}
 
 	Value &operator<<=(const Value &other){ store( cc.CreateShl(load(), other.load()) ); return *this; }
 	Value &operator<<=(int amount){ store( cc.CreateShl(load(), amount) ); return *this; }

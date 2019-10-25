@@ -13,6 +13,7 @@
 //#include "Ref.h"
 //#include "Ptr.h"
 
+#include "coat/Label.h"
 
 namespace coat {
 
@@ -174,6 +175,16 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	Value &operator=(const Ref<F,Value> &other){
 		cc.mov(reg, other);
 		return *this;
+	}
+
+	// special handling of bit tests, for convenience and performance
+	void bit_test_and_set(const Value &bit, Label<F> &label, bool jump_on_set=true){
+		cc.bts(reg, bit);
+		if(jump_on_set){
+			cc.jc(label);
+		}else{
+			cc.jnc(label);
+		}
 	}
 
 	Value &operator<<=(const Value &other){
