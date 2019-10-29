@@ -1,14 +1,16 @@
 #ifndef COAT_ASMJIT_FUNCTION_H_
 #define COAT_ASMJIT_FUNCTION_H_
 
-
 #include "../runtimeasmjit.h"
+
+#include <tuple> // apply
 
 
 namespace coat {
 
 template<typename R, typename ...Args>
 struct Function<runtimeasmjit,R(*)(Args...)>{
+	using CC = runtimeasmjit;
 	using F = ::asmjit::x86::Compiler;
 	using func_type = R (*)(Args...);
 	using return_type = R;
@@ -50,7 +52,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	template<typename ...Names>
 	std::tuple<wrapper_type<F,Args>...> getArguments(Names... names) {
-		static_assert(sizeof...(Args) == sizeof...(Names), "not enough names specified");
+		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
 		// create all parameter wrapper objects in a tuple
 		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names)... };
 		// get argument value and put it in wrapper object
@@ -117,12 +119,12 @@ struct InternalFunction<runtimeasmjit,R(*)(Args...)> {
 	InternalFunction(::asmjit::x86::Compiler &cc) : cc(cc) {
 		funcNode = cc.newFunc(::asmjit::FuncSignatureT<R,Args...>());
 	}
-	InternalFunction(const InternalFunction &) = delete;
+	InternalFunction(const InternalFunction &other) : cc(other.cc), funcNode(other.funcNode) {}
 
 
 	template<typename ...Names>
 	std::tuple<wrapper_type<F,Args>...> getArguments(Names... names) {
-		static_assert(sizeof...(Args) == sizeof...(Names), "not enough names specified");
+		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
 		// create all parameter wrapper objects in a tuple
 		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names)... };
 		// get argument value and put it in wrapper object
