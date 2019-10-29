@@ -21,14 +21,11 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	::asmjit::FileLogger logger;
 
+	const char *name;
 	::asmjit::FuncNode *funcNode;
 
-	Function(runtimeasmjit &asmrt, bool dumpCode=false) : asmrt(asmrt) {
+	Function(runtimeasmjit &asmrt, const char *name="func") : asmrt(asmrt), name(name) {
 		code.init(asmrt.rt.codeInfo());
-		if(dumpCode){
-			logger.setFile(stdout);
-			code.setLogger(&logger);
-		}
 		code.setErrorHandler(&asmrt.errorHandler);
 		code.attach(&cc);
 
@@ -36,6 +33,10 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	}
 	Function(const Function &other) = delete;
 
+	void enableCodeDump(){ //TODO: change dump file
+		logger.setFile(stdout);
+		code.setLogger(&logger);
+	}
 
 	template<typename FuncSig>
 	InternalFunction<runtimeasmjit,FuncSig> addFunction(const char* /* ignore function name */){
@@ -78,13 +79,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		return wrapper_type<F,T>(cc, value, name);
 	}
 
-	func_type finalize(
-#ifdef PROFILING
-		const char *fname="COAT_Function_AsmJit"
-#else
-		const char * =""
-#endif
-	){
+	func_type finalize(){
 		func_type fn;
 
 		cc.endFunc();
@@ -97,7 +92,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		}
 #ifdef PROFILING
 		// dump generated code for profiling with perf
-		asmrt.jd.addCodeSegment(fname, (void*)fn, code.codeSize());
+		asmrt.jd.addCodeSegment(name, (void*)fn, code.codeSize());
 #endif
 		return fn;
 	}
