@@ -127,7 +127,7 @@ void for_each(::asmjit::x86::Compiler &cc, const T &container, Fn &&body){
 // calling function pointer, from generated code to C++ function
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
-FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_type<::asmjit::x86::Compiler,Args>... arguments){
+FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, const wrapper_type<::asmjit::x86::Compiler,Args>&... arguments){
 	if constexpr(std::is_void_v<R>){
 		::asmjit::FuncCallNode *c = cc.call((uint64_t)(void*)fnptr, ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;
@@ -150,7 +150,7 @@ FunctionCall(::asmjit::x86::Compiler &cc, R(*fnptr)(Args...), const char*, reg_t
 // calling generated function
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
-FunctionCall(::asmjit::x86::Compiler &cc, Function<runtimeasmjit,R(*)(Args...)> &func, reg_type<::asmjit::x86::Compiler,Args>... arguments){
+FunctionCall(::asmjit::x86::Compiler &cc, Function<runtimeasmjit,R(*)(Args...)> &func, const wrapper_type<::asmjit::x86::Compiler,Args>&... arguments){
 	if constexpr(std::is_void_v<R>){
 		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;
@@ -173,7 +173,7 @@ FunctionCall(::asmjit::x86::Compiler &cc, Function<runtimeasmjit,R(*)(Args...)> 
 // calling internal function inside generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::asmjit::x86::Compiler,R>>
-FunctionCall(::asmjit::x86::Compiler &cc, InternalFunction<runtimeasmjit,R(*)(Args...)> &func, reg_type<::asmjit::x86::Compiler,Args>... arguments){
+FunctionCall(::asmjit::x86::Compiler &cc, InternalFunction<runtimeasmjit,R(*)(Args...)> &func, const wrapper_type<::asmjit::x86::Compiler,Args>&... arguments){
 	if constexpr(std::is_void_v<R>){
 		::asmjit::FuncCallNode *c = cc.call(func.funcNode->label(), ::asmjit::FuncSignatureT<R,Args...>(::asmjit::CallConv::kIdHost));
 		int index=0;

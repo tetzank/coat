@@ -194,7 +194,7 @@ void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
 // calling function outside of generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+FunctionCall(llvm::IRBuilder<> &cc, R(* /*fnptr*/)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
 	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
 	llvm::Function *fn = currentModule->getFunction(name);
 	if(!fn){
@@ -223,7 +223,7 @@ FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, reg_ty
 // calling function in generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(llvm::IRBuilder<> &cc, Function<runtimellvmjit,R(*)(Args...)> &func, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+FunctionCall(llvm::IRBuilder<> &cc, Function<runtimellvmjit,R(*)(Args...)> &func, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
 	// call
 	llvm::CallInst *call_inst = cc.CreateCall(func.func, { arguments.load()... });
 
@@ -238,7 +238,7 @@ FunctionCall(llvm::IRBuilder<> &cc, Function<runtimellvmjit,R(*)(Args...)> &func
 // calling internal function inside generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(llvm::IRBuilder<> &cc, InternalFunction<runtimellvmjit,R(*)(Args...)> &func, reg_type<::llvm::IRBuilder<>,Args>... arguments){
+FunctionCall(llvm::IRBuilder<> &cc, InternalFunction<runtimellvmjit,R(*)(Args...)> &func, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
 	// call
 	llvm::CallInst *call_inst = cc.CreateCall(func.func, { arguments.load()... });
 
