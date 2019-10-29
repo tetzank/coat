@@ -110,6 +110,22 @@ public:
 		assert(!empty());
 		--finish;
 	}
+	// pop amount of elements from back of array
+	void pop(pod_vector &other, size_t amount){
+		T *pos = finish - amount;
+		if(pos > start){
+			// only part of vector
+			// assumes other is empty as it overwrites and has enough capacity
+			assert(other.capacity() >= amount);
+			memcpy(other.start, pos, amount * sizeof(T));
+			other.finish = other.start + amount;
+			// shrink
+			finish = pos;
+		}else{
+			// asked for or exact same size
+			swap(other);
+		}
+	}
 
 	void clear(){
 		finish = start;
@@ -147,6 +163,8 @@ template<class CC, typename T, size_t I>
 struct StructBase<Struct<CC,pod_vector<T,I>>> {
 	using PV = pod_vector<T,I>;
 
+	//TODO: optimize member access, load done on every call, can we do better?
+
 	auto begin() const {
 		auto &self = static_cast<const Struct<CC,PV>&>(*this);
 		return self.template get_value<PV::member_start>();
@@ -158,7 +176,6 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 
 	void push_back(Value<CC,T> &value){
 		auto &self = static_cast<Struct<CC,PV>&>(*this);
-		//FIXME: accessed each time
 		auto vr_finish = self.template get_value<PV::member_finish>();
 		auto vr_capend = self.template get_value<PV::member_capend>();
 		// grow in size if full
@@ -181,12 +198,53 @@ struct StructBase<Struct<CC,pod_vector<T,I>>> {
 		self.template get_reference<PV::member_finish>() = vr_finish;
 	}
 
+	// pop one element off at the end and return it
+	template<typename Callback>
+	void pop_back(Callback &&cb){
+		auto &self = static_cast<Struct<CC,PV>&>(*this);
+		// get past-the-end and start pointers
+		auto vr_finish = self.template get_value<PV::member_finish>();
+		auto vr_start = self.template get_reference<PV::member_start>();
+		// if not empty
+		coat::if_then(self.cc, vr_finish != vr_start, [&]{
+			// decrement size
+			--vr_finish;
+			// store changed past-the-end pointer to member
+			self.template get_reference<PV::member_finish>() = vr_finish;
+			// call callback with element
+			cb(*vr_finish);
+		});
+	}
+
 	Value<CC,size_t> size() const {
 		auto &self = static_cast<const Struct<CC,PV>&>(*this);
-		//FIXME: accessed each time
 		auto vr_start = self.template get_value<PV::member_start>();
 		auto vr_finish = self.template get_value<PV::member_finish>();
 		return vr_finish - vr_start;
+	}
+
+	void clear(){
+		auto &self = static_cast<Struct<CC,PV>&>(*this);
+		self.template get_reference<PV::member_finish>() = self.template get_value<PV::member_start>();
+	}
+
+	void swap(Struct<CC,PV> &other){
+		auto &self = static_cast<Struct<CC,PV>&>(*this);
+		
+		auto tmp1 = self.template get_value<PV::member_start>();
+		auto tmp2 = other.template get_value<PV::member_start>();
+		self.template get_reference<PV::member_start>() = tmp2;
+		other.template get_reference<PV::member_start>() = tmp1;
+
+		tmp1 = self.template get_value<PV::member_finish>();
+		tmp2 = other.template get_value<PV::member_finish>();
+		self.template get_reference<PV::member_finish>() = tmp2;
+		other.template get_reference<PV::member_finish>() = tmp1;
+
+		tmp1 = self.template get_value<PV::member_capend>();
+		tmp2 = other.template get_value<PV::member_capend>();
+		self.template get_reference<PV::member_capend>() = tmp2;
+		other.template get_reference<PV::member_capend>() = tmp1;
 	}
 };
 
