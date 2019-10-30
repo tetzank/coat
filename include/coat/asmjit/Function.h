@@ -4,6 +4,7 @@
 #include "../runtimeasmjit.h"
 
 #include <tuple> // apply
+#include <cstdio>
 
 
 namespace coat {
@@ -33,8 +34,8 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	}
 	Function(const Function &other) = delete;
 
-	void enableCodeDump(){ //TODO: change dump file
-		logger.setFile(stdout);
+	void enableCodeDump(FILE *fd=stdout){
+		logger.setFile(fd);
 		code.setLogger(&logger);
 	}
 
