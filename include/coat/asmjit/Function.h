@@ -22,10 +22,10 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	::asmjit::FileLogger logger;
 
-	const char *name;
+	const char *funcName;
 	::asmjit::FuncNode *funcNode;
 
-	Function(runtimeasmjit &asmrt, const char *name="func") : asmrt(asmrt), name(name) {
+	Function(runtimeasmjit &asmrt, const char *funcName="func") : asmrt(asmrt), funcName(funcName) {
 		code.init(asmrt.rt.codeInfo());
 		code.setErrorHandler(&asmrt.errorHandler);
 		code.attach(&cc);
@@ -35,6 +35,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	Function(const Function &other) = delete;
 
 	void enableCodeDump(FILE *fd=stdout){
+		logger.setFlags(asmjit::FormatOptions::kFlagHexOffsets);
 		logger.setFile(fd);
 		code.setLogger(&logger);
 	}
@@ -93,7 +94,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		}
 #ifdef PROFILING
 		// dump generated code for profiling with perf
-		asmrt.jd.addCodeSegment(name, (void*)fn, code.codeSize());
+		asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
 #endif
 		return fn;
 	}
