@@ -1,7 +1,7 @@
 [submodule "external/asmjit"]
 	path = external/asmjit
-	url = https://github.com/tetzank/asmjit
-	branch = jitdump
+	url = https://github.com/asmjit/asmjit
+	branch = master
 [submodule "external/llvm"]
 	path = external/llvm
 	url = https://github.com/llvm/llvm-project
