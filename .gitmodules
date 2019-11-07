@@ -6,3 +6,6 @@
 	path = external/llvm
 	url = https://github.com/llvm/llvm-project
 	branch = release/7.x
+[submodule "external/asmjit-utilities"]
+	path = external/asmjit-utilities
+	url = https://github.com/tetzank/asmjit-utilities

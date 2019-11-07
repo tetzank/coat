@@ -2,6 +2,9 @@
 #define COAT_RUNTIMEASMJIT_HPP_
 
 #include <asmjit/asmjit.h>
+#ifdef PROFILING
+#	include <asmjit-utilities/perf/jitdump.h>
+#endif
 
 
 namespace coat {
@@ -18,7 +21,7 @@ struct runtimeasmjit{
 	asmjit::JitRuntime rt;
 	MyErrorHandler errorHandler;
 #ifdef PROFILING
-	asmjit::JitDump jd;
+	JitDump jd;
 
 	runtimeasmjit(){
 		jd.init();

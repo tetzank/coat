@@ -8,7 +8,7 @@
 
 int main(){
 	// generate some data
-	std::vector<uint64_t> data(1024);
+	std::vector<uint64_t> data(1 << 25);
 	std::iota(data.begin(), data.end(), 0);
 
 	// initialize backend, AsmJit in this case

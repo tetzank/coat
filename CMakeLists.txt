@@ -28,6 +28,18 @@ find_library(ASMJIT_LIBRARIES
 )
 include_directories(${ASMJIT_INCLUDE_DIR})
 
+# find asmjit_perf
+find_path(ASMJIT_PERF_INCLUDE_DIR
+	asmjit-utilities/perf/jitdump.h
+	HINTS external/
+)
+find_library(ASMJIT_PERF_LIBRARIES
+	asmjit_perf
+	HINTS external/asmjit-utilities
+	PATH_SUFFIXES perf/build
+)
+include_directories(${ASMJIT_PERF_INCLUDE_DIR})
+
 # find llvm, quick&dirty
 find_path(LLVM_INCLUDE_DIR
 	llvm/IR/IRBuilder.h
@@ -45,11 +57,16 @@ include_directories(${LLVM_INCLUDE_DIR})
 option(ENABLE_ASMJIT "enable AsmJit backend" ON)
 option(ENABLE_LLVMJIT "enable LLVM JIT backend" ON)
 
+# debugging options
+option(ENABLE_PROFILING "enable profiling with perf, only AsmJit currently" OFF)
+if(ENABLE_PROFILING)
+	add_compile_definitions("PROFILING")
+endif()
 
 add_executable(test test.cpp)
 if(ENABLE_ASMJIT)
 	target_compile_definitions(test PRIVATE "ENABLE_ASMJIT")
-	target_link_libraries(test ${ASMJIT_LIBRARIES})
+	target_link_libraries(test ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
 endif()
 if(ENABLE_LLVMJIT)
 	target_compile_definitions(test PRIVATE "ENABLE_LLVMJIT")
@@ -59,13 +76,13 @@ endif()
 if(ENABLE_ASMJIT)
 	add_executable(sum sum.cpp)
 	target_compile_definitions(sum PRIVATE "ENABLE_ASMJIT")
-	target_link_libraries(sum ${ASMJIT_LIBRARIES})
+	target_link_libraries(sum ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
 endif()
 
 add_executable(calculator calculator.cpp)
 if(ENABLE_ASMJIT)
 	target_compile_definitions(calculator PRIVATE "ENABLE_ASMJIT")
-	target_link_libraries(calculator ${ASMJIT_LIBRARIES})
+	target_link_libraries(calculator ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
 endif()
 if(ENABLE_LLVMJIT)
 	target_compile_definitions(calculator PRIVATE "ENABLE_LLVMJIT")
@@ -75,7 +92,7 @@ endif()
 add_executable(fibonacci fibonacci.cpp)
 if(ENABLE_ASMJIT)
 	target_compile_definitions(fibonacci PRIVATE "ENABLE_ASMJIT")
-	target_link_libraries(fibonacci ${ASMJIT_LIBRARIES})
+	target_link_libraries(fibonacci ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
 endif()
 if(ENABLE_LLVMJIT)
 	target_compile_definitions(fibonacci PRIVATE "ENABLE_LLVMJIT")
