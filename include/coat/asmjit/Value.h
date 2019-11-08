@@ -47,9 +47,15 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 			}
 		}
 	}
+#ifdef PROFILING_SOURCE
+	Value(F &cc, T val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Value(cc, name) {
+		*this = D<int>{val, file, line};
+	}
+#else
 	Value(F &cc, T val, const char *name="") : Value(cc, name) {
 		*this = val;
 	}
+#endif
 
 	// real copy means new register and copy content
 	Value(const Value &other) : Value(other.cc) {
@@ -162,21 +168,25 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	}
 
 	// assignment
-	Value &operator=(const Value &other){
-		cc.mov(reg, other);
+	Value &operator=(const D<Value> &other){
+		cc.mov(reg, OP);
+		DL;
 		return *this;
 	}
-	Value &operator=(int value){
-		if(value == 0){
+	Value &operator=(const D<int> &other){
+		if(OP == 0){
 			// just for fun, smaller opcode, writing 32-bit part zero's rest of 64-bit register too
 			cc.xor_(reg.r32(), reg.r32());
+			DL;
 		}else{
-			cc.mov(reg, ::asmjit::imm(value));
+			cc.mov(reg, ::asmjit::imm(OP));
+			DL;
 		}
 		return *this;
 	}
-	Value &operator=(const Ref<F,Value> &other){
-		cc.mov(reg, other);
+	Value &operator=(const D<Ref<F,Value>> &other){
+		cc.mov(reg, OP);
+		DL;
 		return *this;
 	}
 

@@ -49,7 +49,11 @@ struct Condition<::asmjit::x86::Compiler> {
 		return {cc, reg, operand, newcond};
 	}
 
-	void compare() const {
+	void compare(
+#ifdef PROFILING_SOURCE
+		const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+	) const {
 		switch(operand.index()){
 			case 0: cc.cmp(reg, std::get<::asmjit::x86::Gp>(operand)); break;
 			case 1: cc.cmp(reg, ::asmjit::imm(std::get<int>(operand))); break;
@@ -58,6 +62,9 @@ struct Condition<::asmjit::x86::Compiler> {
 			default:
 				__builtin_trap(); //FIXME: crash
 		}
+#ifdef PROFILING_SOURCE
+		((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 	}
 	void setbyte(::asmjit::x86::Gp &dest) const {
 		switch(cond){
@@ -76,7 +83,11 @@ struct Condition<::asmjit::x86::Compiler> {
 				__builtin_trap(); //FIXME: crash
 		}
 	}
-	void jump(::asmjit::Label label) const {
+	void jump(::asmjit::Label label
+#ifdef PROFILING_SOURCE
+		, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+	) const {
 		switch(cond){
 			case ConditionFlag::e : cc.je (label); break;
 			case ConditionFlag::ne: cc.jne(label); break;
@@ -92,6 +103,9 @@ struct Condition<::asmjit::x86::Compiler> {
 			default:
 				__builtin_trap(); //FIXME: crash
 		}
+#ifdef PROFILING_SOURCE
+		((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 	}
 };
 

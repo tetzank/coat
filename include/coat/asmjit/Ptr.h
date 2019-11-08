@@ -86,9 +86,10 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		}
 	}
 
-	Ptr operator+(const value_base_type &value) const {
+	Ptr operator+(const D<value_base_type> &other) const {
 		Ptr res(cc);
-		cc.lea(res, ::asmjit::x86::ptr(reg, value.reg, clog2(sizeof(value_type))));
+		cc.lea(res, ::asmjit::x86::ptr(reg, OP, clog2(sizeof(value_type))));
+		DL;
 		return res;
 	}
 	Ptr operator+(size_t value) const {
@@ -101,7 +102,7 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		cc.lea(reg, ::asmjit::x86::ptr(reg, value.reg, clog2(sizeof(value_type))));
 		return *this;
 	}
-	Ptr &operator+=(int amount){ cc.add(reg, amount*sizeof(value_type)); return *this; }
+	Ptr &operator+=(const D<int> &other){ cc.add(reg, OP*sizeof(value_type)); DL; return *this; }
 	Ptr &operator-=(int amount){ cc.sub(reg, amount*sizeof(value_type)); return *this; }
 
 	// like "+=" without pointer arithmetic

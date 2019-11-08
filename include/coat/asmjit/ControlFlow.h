@@ -7,9 +7,18 @@ namespace coat {
 inline void jump(::asmjit::x86::Compiler &cc, ::asmjit::Label label){
 	cc.jmp(label);
 }
-inline void jump(::asmjit::x86::Compiler &, const Condition<::asmjit::x86::Compiler> &cond, ::asmjit::Label label){
+inline void jump(::asmjit::x86::Compiler &, const Condition<::asmjit::x86::Compiler> &cond, ::asmjit::Label label
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
+#ifdef PROFILING_SOURCE
+	cond.compare(file, line);
+	cond.jump(label, file, line);
+#else
 	cond.compare();
 	cond.jump(label);
+#endif
 }
 
 
@@ -83,19 +92,32 @@ void do_while(::asmjit::x86::Compiler &cc, Fn &&body, Condition<::asmjit::x86::C
 }
 
 template<class Ptr, typename Fn>
-void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body){
+void for_each(::asmjit::x86::Compiler &cc, Ptr &begin, Ptr &end, Fn &&body
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	::asmjit::Label l_loop = cc.newLabel();
 	::asmjit::Label l_exit = cc.newLabel();
 
 	// check if even one iteration
+#ifdef PROFILING_SOURCE
+	jump(cc, begin == end, l_exit, file, line);
+#else
 	jump(cc, begin == end, l_exit);
+#endif
 
 	// loop over all elements
 	cc.bind(l_loop);
 		typename Ptr::mem_type vr_ele = *begin;
 		body(vr_ele);
+#ifdef PROFILING_SOURCE
+		begin += D<int>{1, file, line};
+	jump(cc, begin != end, l_loop, file, line);
+#else
 		++begin;
 	jump(cc, begin != end, l_loop);
+#endif
 
 	// label after loop body
 	cc.bind(l_exit);
