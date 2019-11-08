@@ -2,6 +2,9 @@
 #define COAT_ASMJIT_FUNCTION_H_
 
 #include "../runtimeasmjit.h"
+#ifndef NDEBUG
+#	include <asmjit-utilities/perf/perfcompiler.h>
+#endif
 
 #include <tuple> // apply
 #include <cstdio>
@@ -18,14 +21,18 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	runtimeasmjit &asmrt;
 	::asmjit::CodeHolder code;
+#ifdef NDEBUG
 	::asmjit::x86::Compiler cc;
+#else
+	PerfCompiler cc;
+#endif
 
 	::asmjit::FileLogger logger;
 
 	const char *funcName;
 	::asmjit::FuncNode *funcNode;
 
-	Function(runtimeasmjit &asmrt, const char *funcName="func") : asmrt(asmrt), funcName(funcName) {
+	Function(runtimeasmjit &asmrt, const char *funcName="func") : asmrt(asmrt), cc(nullptr), funcName(funcName) {
 		code.init(asmrt.rt.codeInfo());
 		code.setErrorHandler(&asmrt.errorHandler);
 		code.attach(&cc);
@@ -94,7 +101,8 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		}
 #ifdef PROFILING
 		// dump generated code for profiling with perf
-		asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
+		//asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
+		cc.addCodeSegment(funcName, (void*)fn, code.codeSize());
 #endif
 		return fn;
 	}

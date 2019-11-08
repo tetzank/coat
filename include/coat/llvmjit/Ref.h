@@ -1,6 +1,8 @@
 #ifndef COAT_LLVMJIT_REF_H_
 #define COAT_LLVMJIT_REF_H_
 
+#include "operator_helper.h"
+
 
 namespace coat {
 

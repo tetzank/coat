@@ -10,6 +10,8 @@
 
 #include "coat/Label.h"
 
+#include "operator_helper.h"
+
 
 namespace coat {
 

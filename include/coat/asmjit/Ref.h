@@ -2,7 +2,7 @@
 #define COAT_ASMJIT_REF_H_
 
 #include "coat/Ref.h"
-#include "coat/operator_helper.h"
+#include "operator_helper.h"
 
 #include <asmjit/asmjit.h>
 

@@ -7,13 +7,16 @@
 #include <asmjit/asmjit.h>
 #include "coat/runtimeasmjit.h"
 #include "coat/constexpr_helper.h"
-#include "coat/operator_helper.h"
+
+#include "DebugOperand.h"
+#include "operator_helper.h"
 
 #include "ValueBase.h"
 //#include "Ref.h"
 //#include "Ptr.h"
 
 #include "coat/Label.h"
+
 
 namespace coat {
 
@@ -206,86 +209,97 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	}
 
 	// operators with assignment
-	Value &operator<<=(const Value &other){
+	Value &operator<<=(const D<Value> &other){
 		if constexpr(std::is_signed_v<T>){
-			cc.sal(reg, other);
+			cc.sal(reg, OP);
 		}else{
-			cc.shl(reg, other);
+			cc.shl(reg, OP);
 		}
+		DL;
 		return *this;
 	}
-	Value &operator<<=(int amount){
+	Value &operator<<=(const D<int> &other){
 		if constexpr(std::is_signed_v<T>){
-			cc.sal(reg, ::asmjit::imm(amount));
+			cc.sal(reg, ::asmjit::imm(OP));
 		}else{
-			cc.shl(reg, ::asmjit::imm(amount));
+			cc.shl(reg, ::asmjit::imm(OP));
 		}
-		return *this;
-	}
-	// memory operand not possible on right side
-
-	Value &operator>>=(const Value &other){
-		if constexpr(std::is_signed_v<T>){
-			cc.sar(reg, other);
-		}else{
-			cc.shr(reg, other);
-		}
-		return *this;
-	}
-	Value &operator>>=(int amount){
-		if constexpr(std::is_signed_v<T>){
-			cc.sar(reg, ::asmjit::imm(amount));
-		}else{
-			cc.shr(reg, ::asmjit::imm(amount));
-		}
+		DL;
 		return *this;
 	}
 	// memory operand not possible on right side
 
-	Value &operator*=(const Value &other){
+	Value &operator>>=(const D<Value> &other){
+		if constexpr(std::is_signed_v<T>){
+			cc.sar(reg, OP);
+		}else{
+			cc.shr(reg, OP);
+		}
+		DL;
+		return *this;
+	}
+	Value &operator>>=(const D<int> &other){
+		if constexpr(std::is_signed_v<T>){
+			cc.sar(reg, ::asmjit::imm(OP));
+		}else{
+			cc.shr(reg, ::asmjit::imm(OP));
+		}
+		DL;
+		return *this;
+	}
+	// memory operand not possible on right side
+
+	Value &operator*=(const D<Value> &other){
 		static_assert(sizeof(T) > 1, "multiplication of byte type currently not supported");
 		if constexpr(std::is_signed_v<T>){
-			cc.imul(reg, other);
+			cc.imul(reg, OP);
 		}else{
 			::asmjit::x86::Gp r_upper = cc.newUInt64(); // don't care about type here
 			switch(sizeof(T)){
 				case 1: /* TODO */ break;
-				case 2: cc.mul(r_upper.r16(), reg, other); break;
-				case 4: cc.mul(r_upper.r32(), reg, other); break;
-				case 8: cc.mul(r_upper.r64(), reg, other); break;
+				case 2: cc.mul(r_upper.r16(), reg, OP); break;
+				case 4: cc.mul(r_upper.r32(), reg, OP); break;
+				case 8: cc.mul(r_upper.r64(), reg, OP); break;
 			}
 			// ignores upper part for now
 		}
+		DL;
 		return *this;
 	}
 	// immediate not possible in mul, but imul has support
-	Value &operator*=(int constant){
+	Value &operator*=(const D<int> &other){
 		//static_assert(sizeof(T) > 1, "multiplication of byte type currently not supported");
 		// special handling of stuff which can be done with lea
-		switch(constant){
+		switch(OP){
 			case  0: cc.xor_(reg, reg); break;
 			case  1: /* do nothing */ break;
 			case  2:
 				// lea rax, [rax + rax]
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg));
+				DL;
 				break;
 			case  3:
 				// lea rax, [rax + rax*2]
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(2)));
+				DL;
 				break;
 			case  4:
 				// lea rax, [0 + rax*4]
 				cc.lea(reg, ::asmjit::x86::ptr(0, reg, clog2(4)));
+				DL;
 				break;
 			case  5:
 				// lea rax, [rax + rax*4]
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(4)));
+				DL;
 				break;
 			case  6:
 				// lea rax, [rax + rax*2]
 				// add rax, rax
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(2)));
+				DL;
 				cc.add(reg, reg);
+				DL;
 				break;
 			//case  7:
 			//	// requires two registers
@@ -297,27 +311,40 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 			case  8:
 				// lea rax, [0 + rax*8]
 				cc.lea(reg, ::asmjit::x86::ptr(0, reg, clog2(8)));
+				DL;
 				break;
 			case  9:
 				// lea rax, [rax + rax*8]
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(8)));
+				DL;
 				break;
 			case 10:
 				// lea rax, [rax + rax*4]
 				// add rax, rax
 				cc.lea(reg, ::asmjit::x86::ptr(reg, reg, clog2(4)));
+				DL;
 				cc.add(reg, reg);
+				DL;
 				break;
 
 			default: {
-				if(is_power_of_two(constant)){
-					operator<<=(clog2(constant));
+				if(is_power_of_two(OP)){
+#ifdef NDEBUG
+					operator<<=(clog2(OP));
+#else
+					operator<<=({clog2(OP), other.file, other.line});
+#endif
 				}else{
 					if constexpr(std::is_signed_v<T>){
-						cc.imul(reg, ::asmjit::imm(constant));
+						cc.imul(reg, ::asmjit::imm(OP));
+						DL;
 					}else{
-						Value temp(cc, T(constant), "constant");
+						Value temp(cc, T(OP), "constant");
+#ifdef NDEBUG
 						operator*=(temp);
+#else
+						operator*=({temp, other.file, other.line});
+#endif
 					}
 				}
 			}
@@ -397,26 +424,30 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 
-	Value &operator+=(const Value &other){      cc.add(reg, other); return *this; }
-	Value &operator+=(int constant){            cc.add(reg, ::asmjit::imm(constant)); return *this; }
-	Value &operator+=(const Ref<F,Value> &other){ cc.add(reg, other); return *this; }
+	Value &operator+=(const D<int>          &other){ cc.add(reg, ::asmjit::imm(OP)); DL; return *this; }
+	Value &operator+=(const D<Value>        &other){ cc.add(reg, OP);                DL; return *this; }
+	Value &operator+=(const D<Ref<F,Value>> &other){ cc.add(reg, OP);                DL; return *this; }
 
-	Value &operator-=(const Value &other){      cc.sub(reg, other); return *this; }
-	Value &operator-=(int constant){            cc.sub(reg, ::asmjit::imm(constant)); return *this; }
-	Value &operator-=(const Ref<F,Value> &other){ cc.sub(reg, other); return *this; }
+	Value &operator-=(const D<int>          &other){ cc.sub(reg, ::asmjit::imm(OP)); DL; return *this; }
+	Value &operator-=(const D<Value>        &other){ cc.sub(reg, OP);                DL; return *this; }
+	Value &operator-=(const D<Ref<F,Value>> &other){ cc.sub(reg, OP);                DL; return *this; }
 
-	Value &operator&=(const Value &other){      cc.and_(reg, other); return *this; }
-	Value &operator&=(int constant){            cc.and_(reg, ::asmjit::imm(constant)); return *this; }
-	Value &operator&=(const Ref<F,Value> &other){ cc.and_(reg, other); return *this; }
+	Value &operator&=(const D<int>          &other){ cc.and_(reg, ::asmjit::imm(OP)); DL; return *this; }
+	Value &operator&=(const D<Value>        &other){ cc.and_(reg, OP);                DL; return *this; }
+	Value &operator&=(const D<Ref<F,Value>> &other){ cc.and_(reg, OP);                DL; return *this; }
 
-	Value &operator|=(const Value &other){      cc.or_(reg, other); return *this; }
-	Value &operator|=(int constant){            cc.or_(reg, ::asmjit::imm(constant)); return *this; }
-	Value &operator|=(const Ref<F,Value> &other){ cc.or_(reg, other); return *this; }
+	Value &operator|=(const D<int>          &other){ cc.or_(reg, ::asmjit::imm(OP)); DL; return *this; }
+	Value &operator|=(const D<Value>        &other){ cc.or_(reg, OP);                DL; return *this; }
+	Value &operator|=(const D<Ref<F,Value>> &other){ cc.or_(reg, OP);                DL; return *this; }
 
-	Value &operator^=(const Value &other){      cc.xor_(reg, other); return *this; }
-	Value &operator^=(int constant){            cc.xor_(reg, ::asmjit::imm(constant)); return *this; }
-	Value &operator^=(const Ref<F,Value> &other){ cc.xor_(reg, other); return *this; }
+	Value &operator^=(const D<int>          &other){ cc.xor_(reg, ::asmjit::imm(OP)); DL; return *this; }
+	Value &operator^=(const D<Value>        &other){ cc.xor_(reg, OP);                DL; return *this; }
+	Value &operator^=(const D<Ref<F,Value>> &other){ cc.xor_(reg, OP);                DL; return *this; }
 
+	//TODO: cannot be attributed to a source line as we cannot pass a parameter
+	//TODO: we do not know from where we are called
+	//TODO: => use free standing function which has the object the unary operator applies to as parameter
+	//FIXME: wrong, ~v returns new value, does not modify v, add new method bitwise_not() which does it inplace
 	Value &operator~(){ cc.not_(reg); return *this; }
 
 	// operators creating temporary virtual registers
