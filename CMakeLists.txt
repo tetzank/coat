@@ -58,9 +58,13 @@ option(ENABLE_ASMJIT "enable AsmJit backend" ON)
 option(ENABLE_LLVMJIT "enable LLVM JIT backend" ON)
 
 # debugging options
-option(ENABLE_PROFILING "enable profiling with perf, only AsmJit currently" OFF)
-if(ENABLE_PROFILING)
-	add_compile_definitions("PROFILING")
+if(NOT DEFINED PROFILING)
+	set(PROFILING "" CACHE STRING "Choose type of profiling support for perf and AsmJit, options are: None, Assembly, Source")
+endif()
+if(PROFILING STREQUAL "Assembly")
+	add_compile_definitions("PROFILING_ASSEMBLY")
+elseif(PROFILING STREQUAL "Source")
+	add_compile_definitions("PROFILING_SOURCE")
 endif()
 
 add_executable(test test.cpp)

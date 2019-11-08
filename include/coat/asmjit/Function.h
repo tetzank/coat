@@ -2,7 +2,7 @@
 #define COAT_ASMJIT_FUNCTION_H_
 
 #include "../runtimeasmjit.h"
-#ifndef NDEBUG
+#ifdef PROFILING_SOURCE
 #	include <asmjit-utilities/perf/perfcompiler.h>
 #endif
 
@@ -21,10 +21,10 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 
 	runtimeasmjit &asmrt;
 	::asmjit::CodeHolder code;
-#ifdef NDEBUG
-	::asmjit::x86::Compiler cc;
-#else
+#ifdef PROFILING_SOURCE
 	PerfCompiler cc;
+#else
+	::asmjit::x86::Compiler cc;
 #endif
 
 	::asmjit::FileLogger logger;
@@ -99,9 +99,10 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 			fprintf(stderr, "runtime add failed with CodeCompiler\n");
 			std::exit(1);
 		}
-#ifdef PROFILING
 		// dump generated code for profiling with perf
-		//asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
+#ifdef PROFILING_ASSEMBLY
+		asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
+#elif defined(PROFILING_SOURCE)
 		cc.addCodeSegment(funcName, (void*)fn, code.codeSize());
 #endif
 		return fn;

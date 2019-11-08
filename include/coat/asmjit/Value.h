@@ -329,22 +329,14 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 
 			default: {
 				if(is_power_of_two(OP)){
-#ifdef NDEBUG
-					operator<<=(clog2(OP));
-#else
-					operator<<=({clog2(OP), other.file, other.line});
-#endif
+					operator<<=(PASSOP(clog2(OP)));
 				}else{
 					if constexpr(std::is_signed_v<T>){
 						cc.imul(reg, ::asmjit::imm(OP));
 						DL;
 					}else{
 						Value temp(cc, T(OP), "constant");
-#ifdef NDEBUG
-						operator*=(temp);
-#else
-						operator*=({temp, other.file, other.line});
-#endif
+						operator*=(PASSOP(temp));
 					}
 				}
 			}
