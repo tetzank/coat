@@ -84,9 +84,15 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	}
 	// embed value in the generated code, returns wrapper initialized to this value
 	template<typename T>
+#ifdef PROFILING_SOURCE
+	wrapper_type<F,T> embedValue(T value, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()){
+		return wrapper_type<F,T>(cc, value, name, file, line);
+	}
+#else
 	wrapper_type<F,T> embedValue(T value, const char *name=""){
 		return wrapper_type<F,T>(cc, value, name);
 	}
+#endif
 
 	func_type finalize(){
 		func_type fn;

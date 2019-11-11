@@ -24,12 +24,23 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Ptr(F &cc, const char *name="") : cc(cc) {
 		reg = cc.newIntPtr(name);
 	}
+
+#ifdef PROFILING_SOURCE
+	Ptr(F &cc, value_type *val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Ptr(cc, name) {
+		*this = D<value_type*>{val, file, line};
+	}
+	Ptr(F &cc, const value_type *val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Ptr(cc, name) {
+		*this = D<value_type*>{const_cast<value_type*>(val), file, line};
+	}
+#else
 	Ptr(F &cc, value_type *val, const char *name="") : Ptr(cc, name) {
 		*this = val;
 	}
 	Ptr(F &cc, const value_type *val, const char *name="") : Ptr(cc, name) {
 		*this = const_cast<value_type*>(val);
 	}
+#endif
+
 	// real copy requires new register and copy of content
 	Ptr(const Ptr &other) : Ptr(other.cc) {
 		*this = other;
@@ -37,8 +48,10 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	// move, just take the register
 	Ptr(const Ptr &&other) : cc(other.cc), reg(other.reg) {}
 
-	Ptr &operator=(value_type *value){
-		cc.mov(reg, ::asmjit::imm(value));
+	// assignment
+	Ptr &operator=(const D<value_type*> &other){
+		cc.mov(reg, ::asmjit::imm(OP));
+		DL;
 		return *this;
 	}
 	Ptr &operator=(const Ptr &other){
