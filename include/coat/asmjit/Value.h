@@ -70,8 +70,8 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	}
 
 	// copy ctor for ref, basically loads value from memory and stores in register
-	Value(const Ref<F,Value> &other) : Value(other.cc) {
-		*this = other;
+	Value(const D<Ref<F,Value>> &other) : Value(other.cc) {
+		*this = OP;
 	}
 
 	// explicit type conversion, assignment
@@ -453,7 +453,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	Value &operator~(){ cc.not_(reg); return *this; }
 
 	// operators creating temporary virtual registers
-	OPERATORS_WITH_TEMPORARIES(Value)
+	ASMJIT_OPERATORS_WITH_TEMPORARIES(Value)
 
 	// comparisons
 	Condition<F> operator==(const Value &other) const { return {cc, reg, other.reg, ConditionFlag::e};  }

@@ -236,7 +236,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value &operator~(){ store( cc.CreateNot(load()) ); return *this; }
 
 	// operators creatting temporary
-	OPERATORS_WITH_TEMPORARIES(Value)
+	LLVMJIT_OPERATORS_WITH_TEMPORARIES(Value)
 
 	// comparisons
 	Condition<F> operator==(const Value &other) const { return {cc, memreg, other.memreg, ConditionFlag::e};  }

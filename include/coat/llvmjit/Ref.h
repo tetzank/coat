@@ -31,7 +31,7 @@ struct Ref<::llvm::IRBuilder<>,T> {
 	}
 
 	// operators creating temporary virtual registers
-	OPERATORS_WITH_TEMPORARIES(T)
+	LLVMJIT_OPERATORS_WITH_TEMPORARIES(T)
 
 	// comparisons
 	// swap sides of operands and comparison, not needed for assembly, but avoids code duplication in wrapper

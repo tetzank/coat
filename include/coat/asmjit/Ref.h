@@ -36,7 +36,7 @@ struct Ref<::asmjit::x86::Compiler,T> {
 	// arithmetic + assignment skipped for now
 
 	// operators creating temporary virtual registers
-	OPERATORS_WITH_TEMPORARIES(T)
+	ASMJIT_OPERATORS_WITH_TEMPORARIES(T)
 
 	// comparisons
 	// swap sides of operands and comparison, not needed for assembly, but avoids code duplication in wrapper
