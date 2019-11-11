@@ -32,7 +32,7 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 	const char *funcName;
 	::asmjit::FuncNode *funcNode;
 
-	Function(runtimeasmjit &asmrt, const char *funcName="func") : asmrt(asmrt), cc(nullptr), funcName(funcName) {
+	Function(runtimeasmjit &asmrt, const char *funcName="func") : asmrt(asmrt), funcName(funcName) {
 		code.init(asmrt.rt.codeInfo());
 		code.setErrorHandler(&asmrt.errorHandler);
 		code.attach(&cc);
@@ -92,7 +92,11 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 		func_type fn;
 
 		cc.endFunc();
-		cc.finalize();
+		cc.finalize(
+#ifdef PROFILING_SOURCE
+			asmrt.jd
+#endif
+		);
 
 		::asmjit::Error err = asmrt.rt.add(&fn, &code);
 		if(err){
@@ -100,10 +104,8 @@ struct Function<runtimeasmjit,R(*)(Args...)>{
 			std::exit(1);
 		}
 		// dump generated code for profiling with perf
-#ifdef PROFILING_ASSEMBLY
+#if defined(PROFILING_ASSEMBLY) || defined(PROFILING_SOURCE)
 		asmrt.jd.addCodeSegment(funcName, (void*)fn, code.codeSize());
-#elif defined(PROFILING_SOURCE)
-		cc.addCodeSegment(funcName, (void*)fn, code.codeSize());
 #endif
 		return fn;
 	}

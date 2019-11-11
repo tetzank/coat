@@ -2,7 +2,7 @@
 #define COAT_RUNTIMEASMJIT_HPP_
 
 #include <asmjit/asmjit.h>
-#ifdef PROFILING_ASSEMBLY
+#if defined(PROFILING_ASSEMBLY) || defined(PROFILING_SOURCE)
 #	include <asmjit-utilities/perf/jitdump.h>
 #endif
 
@@ -20,7 +20,7 @@ public:
 struct runtimeasmjit{
 	asmjit::JitRuntime rt;
 	MyErrorHandler errorHandler;
-#ifdef PROFILING_ASSEMBLY
+#if defined(PROFILING_ASSEMBLY) || defined(PROFILING_SOURCE)
 	JitDump jd;
 
 	runtimeasmjit(){
