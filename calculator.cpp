@@ -217,6 +217,7 @@ void assemble_jit3(Fn &fn, const char *operations, const Table &table){
 }
 
 
+#ifdef ENABLE_ASMJIT
 static column_t jit1_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -245,6 +246,8 @@ static column_t jit1_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
+#ifdef ENABLE_LLVMJIT
 static column_t jit1_llvmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -287,7 +290,9 @@ static column_t jit1_llvmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
 
+#ifdef ENABLE_ASMJIT
 static column_t jit2_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -316,6 +321,8 @@ static column_t jit2_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
+#ifdef ENABLE_LLVMJIT
 static column_t jit2_llvmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -358,7 +365,9 @@ static column_t jit2_llvmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
 
+#ifdef ENABLE_ASMJIT
 static column_t jit3_asmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -387,6 +396,8 @@ static column_t jit3_asmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
+#ifdef ENABLE_LLVMJIT
 static column_t jit3_llvmjit(const Table &table, const char *operations){
 	const size_t size = table.nrows;
 	column_t result(size);
@@ -429,6 +440,7 @@ static column_t jit3_llvmjit(const Table &table, const char *operations){
 
 	return result;
 }
+#endif
 
 
 static void write(const column_t &result, const char *name){
@@ -484,32 +496,44 @@ int main(int argc, char **argv){
 		if(dump) write(result, "calc_generic.dump");
 	}
 
+#ifdef ENABLE_ASMJIT
 	REPEAT{
 		column_t result = jit1_asmjit(table, operations);
 		if(dump) write(result, "calc_jit1_asmjit.dump");
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	REPEAT{
 		column_t result = jit1_llvmjit(table, operations);
 		if(dump) write(result, "calc_jit1_llvmjit.dump");
 	}
+#endif
 
+#ifdef ENABLE_ASMJIT
 	REPEAT{
 		column_t result = jit2_asmjit(table, operations);
 		if(dump) write(result, "calc_jit2_asmjit.dump");
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	REPEAT{
 		column_t result = jit2_llvmjit(table, operations);
 		if(dump) write(result, "calc_jit2_llvmjit.dump");
 	}
+#endif
 
+#ifdef ENABLE_ASMJIT
 	REPEAT{
 		column_t result = jit3_asmjit(table, operations);
 		if(dump) write(result, "calc_jit3_asmjit.dump");
 	}
+#endif
+#ifdef ENABLE_LLVMJIT
 	REPEAT{
 		column_t result = jit3_llvmjit(table, operations);
 		if(dump) write(result, "calc_jit3_llvmjit.dump");
 	}
+#endif
 
 	return 0;
 }

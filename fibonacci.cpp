@@ -70,6 +70,7 @@ void assemble_allinone(Fn &fn){
 }
 
 
+#ifdef ENABLE_LLVMJIT
 static void verifyAndOptimize(coat::runtimellvmjit &llvmrt, const char *fname1, const char *fname2){
 	llvmrt.print(fname1);
 	if(!llvmrt.verifyFunctions()){
@@ -81,6 +82,7 @@ static void verifyAndOptimize(coat::runtimellvmjit &llvmrt, const char *fname1, 
 		llvmrt.print(fname2);
 	}
 }
+#endif
 
 int main(int argc, char *argv[]){
 	if(argc < 2){
