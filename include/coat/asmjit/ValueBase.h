@@ -27,13 +27,27 @@ struct ValueBase<::asmjit::x86::Compiler> {
 		return *this;
 	}
 #endif
-
-	// identical operations for signed and unsigned, or different sizes
-	// pre-increment, post-increment not supported as it leads to temporary
-	ValueBase &operator++(){ cc.inc(reg); return *this; }
-	// pre-decrement
-	ValueBase &operator--(){ cc.dec(reg); return *this; }
 };
+
+
+// identical operations for signed and unsigned, or different sizes
+// pre-increment, post-increment not supported as it leads to temporary
+// free-standing functions as we need "this" as explicit parameter, stupidly called "other" here because of macros...
+ValueBase<::asmjit::x86::Compiler> &operator++(const D<ValueBase<::asmjit::x86::Compiler>> &other){
+	OP.cc.inc(OP.reg);
+#ifdef PROFILING_SOURCE
+	((PerfCompiler&)other.operand.cc).attachDebugLine(other.file, other.line);
+#endif
+	return const_cast<ValueBase<::asmjit::x86::Compiler>&>(OP); //HACK
+}
+// pre-decrement
+ValueBase<::asmjit::x86::Compiler> &operator--(const D<ValueBase<::asmjit::x86::Compiler>> &other){
+	OP.cc.dec(OP.reg);
+#ifdef PROFILING_SOURCE
+	((PerfCompiler&)other.operand.cc).attachDebugLine(other.file, other.line);
+#endif
+	return const_cast<ValueBase<::asmjit::x86::Compiler>&>(OP); //HACK
+}
 
 } // namespace
 
