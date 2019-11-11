@@ -25,12 +25,14 @@ struct Ref<::asmjit::x86::Compiler,T> {
 	operator       ::asmjit::x86::Mem&()       { return mem; }
 
 	// assignment storing to memory
-	Ref &operator=(const T &other){
-		cc.mov(mem, other);
+	Ref &operator=(const D<T> &other){
+		cc.mov(mem, OP);
+		DL;
 		return *this;
 	}
-	Ref &operator=(int value){
-		cc.mov(mem, ::asmjit::imm(value));
+	Ref &operator=(const D<int> &other){
+		cc.mov(mem, ::asmjit::imm(OP));
+		DL;
 		return *this;
 	}
 	// arithmetic + assignment skipped for now
