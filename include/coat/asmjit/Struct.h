@@ -87,13 +87,20 @@ struct Struct<::asmjit::x86::Compiler,T>
 	}
 
 	template<int I>
-	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value() const {
+	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value(
+#ifdef PROFILING_SOURCE
+		const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+	) const {
 		using type = std::tuple_element_t<I, typename T::types>;
 		wrapper_type<F,type> ret(cc);
 		if constexpr(std::is_array_v<type>){
 			// array decay to pointer, just add offset to struct pointer
 			//TODO: could just use struct pointer with fixed offset, no need for new register, similar to nested struct
 			cc.lea(ret.reg, ::asmjit::x86::ptr(reg, offset_of_v<I,typename T::types> + offset));
+#ifdef PROFILING_SOURCE
+			((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 		}else if constexpr(std::is_arithmetic_v<std::remove_pointer_t<type>>){
 #if 0
 			//FIXME: VRegMem not defined for pointer types currently
@@ -106,9 +113,15 @@ struct Struct<::asmjit::x86::Compiler,T>
 				case 8: cc.mov(ret.reg, ::asmjit::x86::qword_ptr(reg, offset_of_v<I,typename T::types> + offset)); break;
 			}
 #endif
+#ifdef PROFILING_SOURCE
+			((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 		}else if constexpr(std::is_pointer_v<type>){
 			// pointer to struct, load pointer
 			cc.mov(ret.reg, ::asmjit::x86::qword_ptr(reg, offset_of_v<I,typename T::types> + offset));
+#ifdef PROFILING_SOURCE
+			((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 		}else{
 			// nested struct
 			ret.reg = reg; // pass ptr register
