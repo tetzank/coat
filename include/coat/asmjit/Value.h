@@ -101,7 +101,11 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		return *this;
 	}
 	template<class O>
-	Value &widen(const O &other){
+	Value &widen(const O &other
+#ifdef PROFILING_SOURCE
+		, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+	){
 		size_t other_size;
 		if constexpr(std::is_base_of_v<ValueBase,O>){
 			static_assert(sizeof(T) > sizeof(typename O::value_type), "widening conversion called on wrong types");
@@ -128,6 +132,9 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 				cc.mov(reg.r32(), other);
 			}
 		}
+#ifdef PROFILING_SOURCE
+		((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 		return *this;
 	}
 

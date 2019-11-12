@@ -4,8 +4,15 @@
 
 namespace coat {
 
-inline void jump(::asmjit::x86::Compiler &cc, ::asmjit::Label label){
+inline void jump(::asmjit::x86::Compiler &cc, ::asmjit::Label label
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	cc.jmp(label);
+#ifdef PROFILING_SOURCE
+	((PerfCompiler&)cc).attachDebugLine(file, line);
+#endif
 }
 inline void jump(::asmjit::x86::Compiler &, const Condition<::asmjit::x86::Compiler> &cond, ::asmjit::Label label
 #ifdef PROFILING_SOURCE
@@ -38,23 +45,44 @@ inline void ret(InternalFunction<runtimeasmjit,FnPtr> &ctx, VReg &reg){
 
 
 template<typename Fn>
-void if_then(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&then){
+void if_then(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&then
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	::asmjit::Label l_exit = cc.newLabel();
 	// check
+#ifdef PROFILING_SOURCE
+	jump(cc, !cond, l_exit, file, line); // if not jump over
+#else
 	jump(cc, !cond, l_exit); // if not jump over
+#endif
 	then();
 	// label after then branch
 	cc.bind(l_exit);
 }
 
 template<typename Then, typename Else>
-void if_then_else(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Then &&then, Else &&else_){
+void if_then_else(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Then &&then, Else &&else_
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	::asmjit::Label l_else = cc.newLabel();
 	::asmjit::Label l_exit = cc.newLabel();
 	// check
+#ifdef PROFILING_SOURCE
+	jump(cc, !cond, l_else, file, line); // if not jump to else
+#else
 	jump(cc, !cond, l_else); // if not jump to else
+#endif
 	then();
+#ifdef PROFILING_SOURCE
+	jump(cc, l_exit, file, line);
+#else
 	jump(cc, l_exit);
+#endif
+
 	cc.bind(l_else);
 	else_();
 	// label after then branch
@@ -63,24 +91,40 @@ void if_then_else(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler
 
 
 template<typename Fn>
-void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&body){
+void loop_while(::asmjit::x86::Compiler &cc, Condition<::asmjit::x86::Compiler> cond, Fn &&body
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	::asmjit::Label l_loop = cc.newLabel();
 	::asmjit::Label l_exit = cc.newLabel();
 
 	// check if even one iteration
+#ifdef PROFILING_SOURCE
+	jump(cc, !cond, l_exit, file, line); // if not jump over
+#else
 	jump(cc, !cond, l_exit); // if not jump over
+#endif
 
 	// loop
 	cc.bind(l_loop);
 		body();
+#ifdef PROFILING_SOURCE
+	jump(cc, cond, l_loop, file, line);
+#else
 	jump(cc, cond, l_loop);
+#endif
 
 	// label after loop body
 	cc.bind(l_exit);
 }
 
 template<typename Fn>
-void do_while(::asmjit::x86::Compiler &cc, Fn &&body, Condition<::asmjit::x86::Compiler> cond){
+void do_while(::asmjit::x86::Compiler &cc, Fn &&body, Condition<::asmjit::x86::Compiler> cond
+#ifdef PROFILING_SOURCE
+	, const char *file=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	::asmjit::Label l_loop = cc.newLabel();
 
 	// no checking if even one iteration
@@ -88,7 +132,11 @@ void do_while(::asmjit::x86::Compiler &cc, Fn &&body, Condition<::asmjit::x86::C
 	// loop
 	cc.bind(l_loop);
 		body();
+#ifdef PROFILING_SOURCE
+	jump(cc, cond, l_loop, file, line);
+#else
 	jump(cc, cond, l_loop);
+#endif
 }
 
 template<class Ptr, typename Fn>
