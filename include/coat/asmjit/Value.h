@@ -58,7 +58,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 #endif
 
 	// real copy means new register and copy content
-	Value(const Value &other) : Value(other.cc) {
+	Value(const D<Value> &other) : Value(other.cc) {
 		*this = other;
 	}
 	// move ctor
@@ -71,7 +71,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 
 	// copy ctor for ref, basically loads value from memory and stores in register
 	Value(const D<Ref<F,Value>> &other) : Value(other.cc) {
-		*this = OP;
+		*this = other;
 	}
 
 	// explicit type conversion, assignment

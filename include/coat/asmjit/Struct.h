@@ -54,18 +54,32 @@ struct Struct<::asmjit::x86::Compiler,T>
 	Struct(F &cc, const char *name="") : cc(cc) {
 		reg = cc.newIntPtr(name);
 	}
+#ifdef PROFILING_SOURCE
+	Struct(F &cc, T *val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Struct(cc, name) {
+		*this = D<T*>{val, file, line};
+	}
+	Struct(F &cc, const T *val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Struct(cc, name) {
+		*this = D<T*>{const_cast<T*>(val), file, line};
+	}
+#else
 	Struct(F &cc, T *val, const char *name="") : Struct(cc, name) {
 		*this = val;
 	}
 	Struct(F &cc, const T *val, const char *name="") : Struct(cc, name) {
 		*this = const_cast<T*>(val);
 	}
+#endif
 
 	operator const ::asmjit::x86::Gp&() const { return reg; }
 	operator       ::asmjit::x86::Gp&()       { return reg; }
 
 	// load base pointer
-	Struct &operator=(T *ptr){ cc.mov(reg, ::asmjit::imm(ptr)); offset = 0; return *this; }
+	Struct &operator=(const D<T*> &other){
+		cc.mov(reg, ::asmjit::imm(OP));
+		DL;
+		offset = 0;
+		return *this;
+	}
 
 	// pre-increment
 	Struct &operator++(){ cc.add(reg, sizeof(T)); return *this; }
