@@ -89,3 +89,22 @@ $ cd build
 $ cmake ..
 $ make
 ```
+
+
+## Profiling Instructions
+
+Profiling is currently only supported for the AsmJit backend and perf on Linux.
+Support has to be enabled by defining `PROFILING_ASSEMBLY` or `PROFILING_SOURCE`.
+For the example programs, set the cmake variable `PROFILING` to either "ASSEMBLY" or "SOURCE".
+"ASSEMBLY" instructs COAT to dump the generated code to a special file which enables `perf report` to annotate the generated instructions with profile information.
+Hence, you can profile the generated code on the assembly level.
+"SOURCE" adds debug information to map instructions to the C++ source using COAT which generated the instruction.
+`perf report` will show the source line next to the instruction.
+
+Profiling steps:
+1. `perf record -k 1 ./application`
+2. `perf inject -j -i perf.data -o perf.data.jitted`
+3. `perf report -i perf.data.jitted`
+
+The generated function should appear with the chosen name in the list of functions.
+You can zoom into the function and annotate the instructions with profile information by pressing 'a'.
