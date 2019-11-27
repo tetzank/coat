@@ -108,3 +108,12 @@ Profiling steps:
 
 The generated function should appear with the chosen name in the list of functions.
 You can zoom into the function and annotate the instructions with profile information by pressing 'a'.
+
+
+## Similar Projects
+
+[CodeGen](https://github.com/pdziepak/codegen) - similar wrapper library on top of LLVM
+
+[ClangJIT](https://github.com/hfinkel/llvm-project-cxxjit) - fork of Clang adding JIT compilation of annotated C++ templates
+
+[Easy::Jit](https://github.com/jmmartinez/easy-just-in-time) - stores LLVM IR of annotated functions in executable for JIT compilation with LLVM at runtime
