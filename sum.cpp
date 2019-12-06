@@ -41,8 +41,12 @@ int main(){
 	uint64_t result = foo(data.data(), data.size());
 
 	// print result
-	uint64_t expected = std::accumulate(data.begin(), data.end(), 0);
-	printf("result: %lu; expected: %lu\n", result, expected);
+	uint64_t expected = std::accumulate(data.begin(), data.end(), uint64_t(0));
+	if(result == expected){
+		printf("correct result: %lu\n", result);
+	}else{
+		printf("wrong result:\nresult: %lu; expected: %lu\n", result, expected);
+	}
 
 	return 0;
 }
