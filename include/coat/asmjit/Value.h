@@ -49,7 +49,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 	}
 #ifdef PROFILING_SOURCE
 	Value(F &cc, T val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Value(cc, name) {
-		*this = D<int>{val, file, line};
+		*this = D<T>{val, file, line};
 	}
 #else
 	Value(F &cc, T val, const char *name="") : Value(cc, name) {
@@ -180,7 +180,7 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		DL;
 		return *this;
 	}
-	Value &operator=(const D<int> &other){
+	Value &operator=(const D<value_type> &other){
 		if(OP == 0){
 			// just for fun, smaller opcode, writing 32-bit part zero's rest of 64-bit register too
 			cc.xor_(reg.r32(), reg.r32());
