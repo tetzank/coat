@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # run with -j42 to run with 42 parallel tasks
 
