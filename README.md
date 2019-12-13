@@ -10,8 +10,10 @@ Tailored code takes advantage of the knowledge about the involved data types and
 In C++, we can instruct the compiler to generate specialized code at compile-time with the help of template metaprogramming and constant expressions.
 However, constant evaluation is limited as it cannot leverage runtime information.
 JIT compilations lifts this limitation by enabling programs to generate code at runtime.
+This library tries to make JIT compilation as easy as possible.
 
 More details are explained in a [blog post](https://tetzank.github.io/posts/coat-edsl-for-codegen/).
+
 
 ## Example
 
@@ -76,35 +78,37 @@ A more comprehensive example is provided in [another repository](https://github.
 ## Control Flow Abstractions
 
 Next to types for code generation, COAT provides helper functions simulating loop and branch constructs of C++.
-The following listing relates these abstraction to their C++ counterpart.
+The following listing relates these abstractions to their C++ counterpart.
 
 ```C++
-coat::if_then(coat::Function &ctx, condition, [&]{       // if( condition ){
-	then_branch                                          //     then_branch
-});                                                      // }
+coat::if_then(coat::Function &ctx, condition, [&]{      // if( condition ){
+    then_branch                                         //     then_branch
+});                                                     // }
 
 
-coat::if_then_else(coat::Function &ctx, condition, [&]{  // if( condition ){
-	then_branch                                          //     then_branch
-}, [&]{                                                  // } else {
-	else_branch                                          //     else_branch
-});                                                      // }
+coat::if_then_else(coat::Function &ctx, condition, [&]{ // if( condition ){
+    then_branch                                         //     then_branch
+}, [&]{                                                 // } else {
+    else_branch                                         //     else_branch
+});                                                     // }
 
 
-coat::loop_while(coat::Function &ctx, condition, [&]{    // while( condition ){
-	loop_body                                            //     loop_body
-});                                                      // }
+coat::loop_while(coat::Function &ctx, condition, [&]{   // while( condition ){
+    loop_body                                           //     loop_body
+});                                                     // }
 
 
-coat::do_while(coat::Function &ctx, [&]{                 // do {
-	loop_body                                            //     loop_body
-}, condition);                                           // } while( condition );
+coat::do_while(coat::Function &ctx, [&]{                // do {
+    loop_body                                           //     loop_body
+}, condition);                                          // } while( condition );
 
 
-coat::for_each(coat::Function &ctx, begin, end, [&]{     // for( ; begin != end; ++begin ){
-	loop_body                                            //     loop_body
-});                                                      // }
+coat::for_each(coat::Function &ctx, begin, end, [&]{    // for( ; begin != end; ++begin ){
+    loop_body                                           //     loop_body
+});                                                     // }
 ```
+
+With the help of lambda expressions, we can format the code in similar way than C++ code, improving readability and maintainability.
 
 
 ## Host Program Integration
@@ -122,16 +126,16 @@ class my_vector {
 // macro adds metadata to calculate
 // data layout at compile-time
 #define MEMBERS(x)    \
-	x(int*, start)    \
-	x(int*, finish)   \
-	x(int*, capacity)
+    x(int*, start)    \
+    x(int*, finish)   \
+    x(int*, capacity)
 
 DECLARE_PRIVATE(MEMBERS)
 #undef MEMBERS
 
 public:
-	my_vector();
-	...
+    my_vector();
+    ...
 };
 ```
 
