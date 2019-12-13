@@ -15,47 +15,51 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories("${CMAKE_SOURCE_DIR}/include/")
 
-# find asmjit
-find_path(ASMJIT_INCLUDE_DIR
-	asmjit/asmjit.h
-	HINTS external/asmjit ENV ASMJIT_ROOT
-	PATH_SUFFIXES src
-)
-find_library(ASMJIT_LIBRARIES
-	asmjit
-	HINTS external/asmjit ENV ASMJIT_ROOT
-	PATH_SUFFIXES build build_next
-)
-include_directories(${ASMJIT_INCLUDE_DIR})
-
-# find asmjit_perf
-find_path(ASMJIT_PERF_INCLUDE_DIR
-	asmjit-utilities/perf/jitdump.h
-	HINTS external/
-)
-find_library(ASMJIT_PERF_LIBRARIES
-	asmjit_perf
-	HINTS external/asmjit-utilities
-	PATH_SUFFIXES perf/build
-)
-include_directories(${ASMJIT_PERF_INCLUDE_DIR})
-
-# find llvm, quick&dirty
-find_path(LLVM_INCLUDE_DIR
-	llvm/IR/IRBuilder.h
-	HINTS external/llvm/llvm/install ENV LLVM_ROOT
-	PATH_SUFFIXES include
-)
-find_library(LLVM_LIBRARIES
-	LLVM-7.1
-	HINTS external/llvm/llvm/install ENV LLVM_ROOT
-	PATH_SUFFIXES lib build/lib
-)
-include_directories(${LLVM_INCLUDE_DIR})
-
-
 option(ENABLE_ASMJIT "enable AsmJit backend" ON)
 option(ENABLE_LLVMJIT "enable LLVM JIT backend" ON)
+
+if(ENABLE_ASMJIT)
+	# find asmjit
+	find_path(ASMJIT_INCLUDE_DIR
+		asmjit/asmjit.h
+		HINTS external/asmjit ENV ASMJIT_ROOT
+		PATH_SUFFIXES src
+	)
+	find_library(ASMJIT_LIBRARIES
+		asmjit
+		HINTS external/asmjit ENV ASMJIT_ROOT
+		PATH_SUFFIXES build build_next
+	)
+	include_directories(${ASMJIT_INCLUDE_DIR})
+
+	# find asmjit_perf
+	find_path(ASMJIT_PERF_INCLUDE_DIR
+		asmjit-utilities/perf/jitdump.h
+		HINTS external/
+	)
+	find_library(ASMJIT_PERF_LIBRARIES
+		asmjit_perf
+		HINTS external/asmjit-utilities
+		PATH_SUFFIXES perf/build
+	)
+	include_directories(${ASMJIT_PERF_INCLUDE_DIR})
+endif()
+
+if(ENABLE_LLVMJIT)
+	# find llvm, quick&dirty
+	find_path(LLVM_INCLUDE_DIR
+		llvm/IR/IRBuilder.h
+		HINTS external/llvm/llvm/install ENV LLVM_ROOT
+		PATH_SUFFIXES include
+	)
+	find_library(LLVM_LIBRARIES
+		LLVM-7.1
+		HINTS external/llvm/llvm/install ENV LLVM_ROOT
+		PATH_SUFFIXES lib build/lib
+	)
+	include_directories(${LLVM_INCLUDE_DIR})
+endif()
+
 
 # debugging options
 if(NOT DEFINED PROFILING)
