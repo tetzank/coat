@@ -70,7 +70,93 @@ int main(){
 }
 ```
 
-A more comprehensive example is provided in [another repository](https://github.com/tetzank/sigmod18contest), using COAT in the context of query processing.
+A more comprehensive example is provided in [another repository](https://github.com/tetzank/sigmod18contest), using COAT in the context of query processing in a relational database.
+
+
+## Control Flow Abstractions
+
+Next to types for code generation, COAT provides helper functions simulating loop and branch constructs of C++.
+The following listing relates these abstraction to their C++ counterpart.
+
+```C++
+coat::if_then(coat::Function &ctx, condition, [&]{       // if( condition ){
+	then_branch                                          //     then_branch
+});                                                      // }
+
+
+coat::if_then_else(coat::Function &ctx, condition, [&]{  // if( condition ){
+	then_branch                                          //     then_branch
+}, [&]{                                                  // } else {
+	else_branch                                          //     else_branch
+});                                                      // }
+
+
+coat::loop_while(coat::Function &ctx, condition, [&]{    // while( condition ){
+	loop_body                                            //     loop_body
+});                                                      // }
+
+
+coat::do_while(coat::Function &ctx, [&]{                 // do {
+	loop_body                                            //     loop_body
+}, condition);                                           // } while( condition );
+
+
+coat::for_each(coat::Function &ctx, begin, end, [&]{     // for( ; begin != end; ++begin ){
+	loop_body                                            //     loop_body
+});                                                      // }
+```
+
+
+## Host Program Integration
+
+Data structures of the host program may be accessed directly from within the generated code.
+The member variables of a data structure must be created with a special macro as shown below.
+The macro adds a bit of metadata to the type, such that the data layout can be calculated.
+C++ has no compile-time introspection yet.
+The metadata does not leak to the runtime.
+The size of the data structure stays unchanged.
+
+```C++
+class my_vector {
+// declare all member variables
+// macro adds metadata to calculate
+// data layout at compile-time
+#define MEMBERS(x)    \
+	x(int*, start)    \
+	x(int*, finish)   \
+	x(int*, capacity)
+
+DECLARE_PRIVATE(MEMBERS)
+#undef MEMBERS
+
+public:
+	my_vector();
+	...
+};
+```
+
+With the metadata in place, COAT creates wrapper types automatically for pointers to such a data structure.
+The wrapper allows read and write access to all member variables.
+
+```C++
+// function signature, taking pointer to my_vector and returning size
+using func_t = size_t (*)(my_vector *vec);
+// context object representing generated function
+coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+{ // start of EDSL code describing function to generate
+	// get function argument
+	auto [vec] = fn.getArguments("vec");
+	// read member "start"
+	auto start = vec.get_value<my_vector::member_start>();
+	// read member "finish"
+	auto finish = vec.get_value<my_vector::member_finish>();
+	// calculate number of elements between both pointers
+	auto size = finish - start;
+	coat::ret(fn, size);
+}
+// finalize code generation and get function pointer to generated code
+func_t foo = fn.finalize();
+```
 
 
 ## Build Instructions
