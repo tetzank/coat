@@ -113,6 +113,46 @@ With the help of lambda expressions, we can format the code in similar way than 
 
 ## Host Program Integration
 
+COAT provides multiple functionalities to make interaction between the generated code and the host program as seamless as possible.
+This includes calling functions and accessing data structures of the host program.
+
+
+### Calling Functions
+
+Not every function benefits from JIT compilation.
+COAT provides the helper function `FunctionCall()` generating a call to the passed funtion pointer.
+
+```C++
+// function to call
+void log(int value);
+
+...
+
+coat::Value value(fn, 42, "value");
+// generating the call in COAT
+// parameter: context object, function pointer, name, function parameters
+coat::FunctionCall(fn, log, "log", value);
+```
+
+When the called function has a return value, it can be captured in a "meta-variable".
+The list of parameters and return type is infered from the function pointer.
+
+```C++
+// function to call
+int hash(int value);
+
+...
+
+
+coat::Value value(fn, 42, "value");
+// generating the call in COAT
+// parameter: context object, function pointer, name, function parameters
+auto result = coat::FunctionCall(fn, hash, "hash", value);
+```
+
+
+### Reading from Data Structures
+
 Data structures of the host program may be accessed directly from within the generated code.
 The member variables of a data structure must be created with a special macro as shown below.
 The macro adds a bit of metadata to the type, such that the data layout can be calculated.
@@ -141,6 +181,7 @@ public:
 
 With the metadata in place, COAT creates wrapper types automatically for pointers to such a data structure.
 The wrapper allows read and write access to all member variables.
+In the following code snippet, we read and copy the value with `get_value<memberindex>` where `memberindex` is an enum entry which was created by the macros as well.
 
 ```C++
 // function signature, taking pointer to my_vector and returning size
@@ -157,6 +198,43 @@ coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 	// calculate number of elements between both pointers
 	auto size = finish - start;
 	coat::ret(fn, size);
+}
+// finalize code generation and get function pointer to generated code
+func_t foo = fn.finalize();
+```
+
+
+### Writing into Data Structures
+
+For writing, we get a reference instead of a copy by using `get_reference<memberindex>`.
+Assigning values to the reference will generate code to write to the data structure.
+
+```C++
+// function signature, taking pointer to my_vector and returning size
+using func_t = void (*)(my_vector *vec, int value);
+// context object representing generated function
+coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+{ // start of EDSL code describing function to generate
+	// get function argument
+	auto [vec,value] = fn.getArguments("vec", "value");
+	// read member "finish"
+	auto finish = vec.get_value<my_vector::member_finish>();
+	// read member "capacity"
+	auto capacity = vec.get_value<my_vector::member_capacity>();
+	// grow if full
+	coat::if_then(fn, finish == capacity, [&]{
+		// call function vector_grow(my_vector*) to grow allocated memory
+		coat::FunctionCall(fn, vector_grow, "vector_grow", vec);
+		// re-read member "finish" as address of allocated memory could be different
+		finish = vec.get_value<my_vector::member_finish>();
+	});
+	// add new value
+	*finish = value;
+	// move finish to new past-the-end position
+	++finish;
+	// write the changed past-the-end pointer back to the data structure
+	self.template get_reference<PV::member_finish>() = vr_finish;
+	coat::ret(fn);
 }
 // finalize code generation and get function pointer to generated code
 func_t foo = fn.finalize();
