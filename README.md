@@ -120,10 +120,12 @@ This includes calling functions and accessing data structures of the host progra
 ### Calling Functions
 
 Not every function benefits from JIT compilation.
-COAT provides the helper function `FunctionCall()` generating a call to the passed funtion pointer.
+COAT provides the helper function `FunctionCall()` generating a function call to the passed funtion pointer.
+This way, you do not need to reimplement existing functions with COAT to make them usable for JIT compilation.
+You just call them from the generated code with the correct calling convention of the system.
 
 ```C++
-// function to call
+// function to call, residing outside of generated code
 void log(int value);
 
 ...
@@ -138,11 +140,10 @@ When the called function has a return value, it can be captured in a "meta-varia
 The list of parameters and return type is infered from the function pointer.
 
 ```C++
-// function to call
+// function to call, residing outside of generated code
 int hash(int value);
 
 ...
-
 
 coat::Value value(fn, 42, "value");
 // generating the call in COAT
@@ -162,7 +163,7 @@ The size of the data structure stays unchanged.
 
 ```C++
 class my_vector {
-// declare all member variables
+// declare all member variables: int *start, *finish, *capacity;
 // macro adds metadata to calculate
 // data layout at compile-time
 #define MEMBERS(x)    \
@@ -210,7 +211,7 @@ For writing, we get a reference instead of a copy by using `get_reference<member
 Assigning values to the reference will generate code to write to the data structure.
 
 ```C++
-// function signature, taking pointer to my_vector and returning size
+// function signature, taking pointer to my_vector and a value to push on vector
 using func_t = void (*)(my_vector *vec, int value);
 // context object representing generated function
 coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
@@ -233,7 +234,7 @@ coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 	// move finish to new past-the-end position
 	++finish;
 	// write the changed past-the-end pointer back to the data structure
-	self.template get_reference<PV::member_finish>() = vr_finish;
+	vec.get_reference<PV::member_finish>() = vr_finish;
 	coat::ret(fn);
 }
 // finalize code generation and get function pointer to generated code
