@@ -11,12 +11,24 @@ int main(){
 	std::vector<uint64_t> data(1 << 25);
 	std::iota(data.begin(), data.end(), 0);
 
+	// signature of the generated function: taking pointer and size, returning sum
+	using func_t = uint64_t (*)(uint64_t *data, uint64_t size);
+
+#ifdef ENABLE_ASMJIT
 	// initialize backend, AsmJit in this case
 	coat::runtimeasmjit asmrt;
-	// signature of the generated function
-	using func_t = uint64_t (*)(uint64_t *data, uint64_t size);
 	// context object representing the generated function
 	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+#elif defined(ENABLE_LLVMJIT)
+	// initialize LLVM backend
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
+	// context object representing the generated function
+	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
+#else
+#	error "Neither AsmJit nor LLVM enabled"
+#endif
+
 	// start of the EDSL code describing the code of the generated function
 	{
 		// get function arguments as "meta-variables"
@@ -44,9 +56,9 @@ int main(){
 	uint64_t expected = std::accumulate(data.begin(), data.end(), uint64_t(0));
 	if(result == expected){
 		printf("correct result: %lu\n", result);
+		return 0;
 	}else{
 		printf("wrong result:\nresult: %lu; expected: %lu\n", result, expected);
+		return -1;
 	}
-
-	return 0;
 }
