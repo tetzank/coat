@@ -11,5 +11,8 @@ struct Vector;
 #ifdef ENABLE_ASMJIT
 #  include "asmjit/Vector.h"
 #endif
+#ifdef ENABLE_LLVMJIT
+#  include "llvmjit/Vector.h"
+#endif
 
 #endif

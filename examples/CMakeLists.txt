@@ -41,8 +41,10 @@ if(ENABLE_LLVMJIT)
 endif()
 
 # just trying vector types
-if(ENABLE_ASMJIT)
+if(ENABLE_ASMJIT AND ENABLE_LLVMJIT)
 	add_executable(vectormean vectormean.cpp)
 	target_compile_definitions(vectormean PRIVATE "ENABLE_ASMJIT")
 	target_link_libraries(vectormean ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
+	target_compile_definitions(vectormean PRIVATE "ENABLE_LLVMJIT")
+	target_link_libraries(vectormean ${LLVM_LIBRARIES})
 endif()

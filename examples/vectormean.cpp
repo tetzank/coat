@@ -95,7 +95,7 @@ void mean_asmjit(
 	rt.release(fn);
 }
 
-void mean_coat(
+void mean_coat_asmjit(
 	const uint32_t * __restrict__ a,
 	const uint32_t * __restrict__ b,
 	      uint32_t * __restrict__ r,
@@ -127,6 +127,40 @@ void mean_coat(
 	foo(a, b, r, size);
 }
 
+void mean_coat_llvmjit(
+	const uint32_t * __restrict__ a,
+	const uint32_t * __restrict__ b,
+	      uint32_t * __restrict__ r,
+	size_t size
+){
+	// init
+	coat::runtimellvmjit::initTarget();
+	coat::runtimellvmjit llvmrt;
+	// context object
+	coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
+
+	{
+		auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
+		coat::Value pos(fn, uint64_t(0), "pos");
+		
+		coat::Vector<::llvm::IRBuilder<>,uint32_t,8> avec(fn), bvec(fn);
+		coat::do_while(fn, [&]{
+			avec = aptr[pos];
+			bvec = bptr[pos];
+			avec += bvec;
+			avec >>= 1;
+			avec.store(rptr[pos]);
+			pos += avec.getWidth();
+		}, pos != sze);
+		coat::ret(fn);
+	}
+	func_type foo = fn.finalize();
+
+	// execute
+	foo(a, b, r, size);
+}
+
+
 
 static void print(const std::vector<uint32_t> &vec){
 	for(size_t i=0, s=vec.size(); i<s; ++i){
@@ -148,27 +182,35 @@ int main(){
 	// call
 	mean(a.data(), b.data(), r.data(), r.size());
 	if(r == e){
-		puts("Success");
+		puts("mean: Success");
 	}else{
-		puts("Failure");
+		puts("mean: Failure");
 		print(r);
 	}
 
 	// asmjit
 	mean_asmjit(a.data(), b.data(), r.data(), r.size());
 	if(r == e){
-		puts("Success");
+		puts("mean_asmjit: Success");
 	}else{
-		puts("Failure");
+		puts("mean_asmjit: Failure");
 		print(r);
 	}
 
 	// coat
-	mean_coat(a.data(), b.data(), r.data(), r.size());
+	mean_coat_asmjit(a.data(), b.data(), r.data(), r.size());
 	if(r == e){
-		puts("Success");
+		puts("mean_coat_asmjit: Success");
 	}else{
-		puts("Failure");
+		puts("mean_coat_asmjit: Failure");
+		print(r);
+	}
+
+	mean_coat_llvmjit(a.data(), b.data(), r.data(), r.size());
+	if(r == e){
+		puts("mean_coat_llvmjit: Success");
+	}else{
+		puts("mean_coat_llvmjit: Failure");
 		print(r);
 	}
 
