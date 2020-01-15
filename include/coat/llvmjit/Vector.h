@@ -58,6 +58,12 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 
 	// vector types are first class in LLVM IR, most operations accept them as operands
 	Vector &operator+=(const Vector &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
+	Vector &operator+=(const Ref<F,Value<F,T>> &other){
+		// cast array ptr to vector ptr
+		llvm::Value *vecptr = cc.CreateBitCast(other.mem, memreg->getType());
+		store( cc.CreateAdd(load(), cc.CreateLoad(vecptr, "vectorload")) );
+		return *this;
+	}
 
 	Vector &operator>>=(int amount){
 		if constexpr(std::is_signed_v<T>){
@@ -67,7 +73,28 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 		}
 		return *this;
 	}
+
+	Vector &operator/=(int amount){
+		llvm::Constant *splat = llvm::ConstantVector::getSplat(
+			width,
+			llvm::ConstantInt::get( ((llvm::VectorType*)type())->getElementType(), amount )
+		);
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateSDiv(load(), splat) );
+		}else{
+			store( cc.CreateUDiv(load(), splat) );
+		}
+		return *this;
+	}
 };
+
+
+template<int width, typename T>
+Vector<llvm::IRBuilder<>,T,width> make_vector(llvm::IRBuilder<> &cc, Ref<llvm::IRBuilder<>,Value<llvm::IRBuilder<>,T>> &&src){
+	Vector<llvm::IRBuilder<>,T,width> v(cc);
+	v = std::move(src);
+	return v;
+}
 
 } // namespace
 

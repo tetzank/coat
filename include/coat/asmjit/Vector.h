@@ -39,7 +39,10 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 
 	unsigned getWidth() const { return width; }
 
-	Vector &operator=(Ref<F,Value<F,T>> &&src){
+	// load vector from memory, always unaligned load
+	Vector &operator=(Ref<F,Value<F,T>> &&src){ load(std::move(src)); return *this; }
+	// load vector from memory, always unaligned load
+	void load(Ref<F,Value<F,T>> &&src){
 		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
 			// 128 bit SSE
 			src.mem.setSize(16); // change to xmmword
@@ -49,9 +52,9 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 			src.mem.setSize(32); // change to ymmword
 			cc.vmovdqu(reg, src);
 		}
-		return *this;
 	}
 
+	// unaligned store
 	void store(Ref<F,Value<F,T>> &&dest) const {
 		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
 			// 128 bit SSE
@@ -63,6 +66,7 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 			cc.vmovdqu(dest, reg);
 		}
 	}
+	//TODO: aligned load & store
 
 	Vector &operator+=(const Vector &other){
 		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
@@ -80,6 +84,28 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 				case 2: cc.vpaddw(reg, reg, other.reg); break;
 				case 4: cc.vpaddd(reg, reg, other.reg); break;
 				case 8: cc.vpaddq(reg, reg, other.reg); break;
+			}
+		}
+		return *this;
+	}
+	Vector &operator+=(Ref<F,Value<F,T>> &&other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			other.mem.setSize(16); // change to xmmword
+			switch(sizeof(T)){
+				case 1: cc.paddb(reg, other); break;
+				case 2: cc.paddw(reg, other); break;
+				case 4: cc.paddd(reg, other); break;
+				case 8: cc.paddq(reg, other); break;
+			}
+		}else{
+			// 256 bit AVX
+			other.mem.setSize(32); // change to ymmword
+			switch(sizeof(T)){
+				case 1: cc.vpaddb(reg, reg, other); break;
+				case 2: cc.vpaddw(reg, reg, other); break;
+				case 4: cc.vpaddd(reg, reg, other); break;
+				case 8: cc.vpaddq(reg, reg, other); break;
 			}
 		}
 		return *this;
@@ -105,10 +131,24 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		return *this;
 	}
 
-	//Vector &operator/=(int amount){
-	//	//TODO
-	//}
+	Vector &operator/=(int amount){
+		if(is_power_of_two(amount)){
+			operator>>=(clog2(amount));
+		}else{
+			//TODO
+			assert(false);
+		}
+		return *this;
+	}
 };
+
+
+template<int width, typename T>
+Vector<::asmjit::x86::Compiler,T,width> make_vector(::asmjit::x86::Compiler &cc, Ref<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,T>> &&src){
+	Vector<::asmjit::x86::Compiler,T,width> v(cc);
+	v = std::move(src);
+	return v;
+}
 
 } // namespace
 

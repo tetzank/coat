@@ -109,16 +109,16 @@ void mean_coat_asmjit(
 	{
 		auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
 		coat::Value pos(fn, uint64_t(0), "pos");
-		
-		coat::Vector<asmjit::x86::Compiler,uint32_t,8> avec(fn), bvec(fn);
+
 		coat::do_while(fn, [&]{
-			avec = aptr[pos];
-			bvec = bptr[pos];
-			avec += bvec;
-			avec >>= 1;
-			avec.store(rptr[pos]);
-			pos += avec.getWidth();
-		}, pos != sze);
+			// rptr[pos] = (make_vector<8>(fn, aptr[pos]) += bptr[pos]) /= 2;
+			auto vec = coat::make_vector<8>(fn, aptr[pos]);
+			vec += bptr[pos];
+			vec /= 2;
+			vec.store(rptr[pos]);
+
+			pos += vec.getWidth();
+		}, pos <= sze);
 		coat::ret(fn);
 	}
 	func_type foo = fn.finalize();
@@ -136,6 +136,7 @@ void mean_coat_llvmjit(
 	// init
 	coat::runtimellvmjit::initTarget();
 	coat::runtimellvmjit llvmrt;
+	llvmrt.setOptLevel(2);
 	// context object
 	coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 
@@ -143,17 +144,29 @@ void mean_coat_llvmjit(
 		auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
 		coat::Value pos(fn, uint64_t(0), "pos");
 		
-		coat::Vector<::llvm::IRBuilder<>,uint32_t,8> avec(fn), bvec(fn);
 		coat::do_while(fn, [&]{
-			avec = aptr[pos];
-			bvec = bptr[pos];
-			avec += bvec;
-			avec >>= 1;
-			avec.store(rptr[pos]);
-			pos += avec.getWidth();
+			auto vec = coat::make_vector<8>(fn, aptr[pos]);
+			vec += bptr[pos];
+			vec /= 2;
+			vec.store(rptr[pos]);
+
+			pos += vec.getWidth();
 		}, pos != sze);
 		coat::ret(fn);
 	}
+
+	if(!llvmrt.verifyFunctions()){
+		puts("verification failed. aborting.");
+		llvmrt.print("failed.ll");
+		exit(EXIT_FAILURE);
+	}
+	llvmrt.optimize();
+	if(!llvmrt.verifyFunctions()){
+		puts("verification after optimization failed. aborting.");
+		llvmrt.print("failed_opt.ll");
+		exit(EXIT_FAILURE);
+	}
+
 	func_type foo = fn.finalize();
 
 	// execute
@@ -166,6 +179,7 @@ static void print(const std::vector<uint32_t> &vec){
 	for(size_t i=0, s=vec.size(); i<s; ++i){
 		printf("%u, ", vec[i]);
 	}
+	printf("\n");
 }
 
 int main(){
