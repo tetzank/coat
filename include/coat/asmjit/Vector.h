@@ -1,6 +1,8 @@
 #ifndef COAT_ASMJIT_VECTOR_H_
 #define COAT_ASMJIT_VECTOR_H_
 
+#include <cassert>
+
 #include "Ptr.h"
 
 
@@ -37,7 +39,7 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		}
 	}
 
-	unsigned getWidth() const { return width; }
+	inline unsigned getWidth() const { return width; }
 
 	// load vector from memory, always unaligned load
 	Vector &operator=(Ref<F,Value<F,T>> &&src){ load(std::move(src)); return *this; }
