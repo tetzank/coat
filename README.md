@@ -75,6 +75,22 @@ int main(){
 A more comprehensive example is provided in [another repository](https://github.com/tetzank/sigmod18contest), using COAT in the context of query processing in a relational database.
 
 
+## Type-Based Compilation
+
+COAT provides special types representing variables in the generated function, named "meta-variables" for easier discussion.
+All operators on these types are overloaded to emit the corresponding instructions through the chosen JIT compiler backend.
+This results in a two-staged compilation depending on the types used.
+C++ variables and all operations on them get compiled at compile-time as normal.
+Operations on "meta-variables" get transformed to JIT API calls at compile-time which generate machine code at runtime.
+
+The type support is very limited at the moment.
+The only fundamental type is `coat::Value` which represents a signed/unsigned integer of size 1, 2, 4 or 8 bytes.
+Floating point types are currently not supported.
+Furthermore, `coat::Ref` and `coat::Ptr` represent reference and pointer types to `coat::Value`.
+Additionally, `coat::Struct` represents a pointer to an aggregate type like a struct or class, providing access to member variables.
+It is discussed in more detail in the section "Host Program Integration" below.
+
+
 ## Control Flow Abstractions
 
 Next to types for code generation, COAT provides helper functions simulating loop and branch constructs of C++.
@@ -103,9 +119,11 @@ coat::do_while(coat::Function &ctx, [&]{                // do {
 }, condition);                                          // } while( condition );
 
 
-coat::for_each(coat::Function &ctx, begin, end, [&]{    // for( ; begin != end; ++begin ){
-    loop_body                                           //     loop_body
-});                                                     // }
+coat::for_each(coat::Function &ctx, begin, end,         // for( ; begin != end; ++begin ){
+    [&](auto &element){                                 //     auto &element = *begin;
+        loop_body                                       //     loop_body
+    }                                                   //
+);                                                      // }
 ```
 
 With the help of lambda expressions, we can format the code in similar way than C++ code, improving readability and maintainability.
