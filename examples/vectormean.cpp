@@ -46,22 +46,40 @@ void mean_coat(
 #else
 #	error "Neither AsmJit nor LLVM enabled"
 #endif
-	{
+
+	// number of elements in vector
+	static const int vectorsize = 4;
+	{ // EDSL
+		// function parameters: 2 source arrays, destination array, size of arrays
 		auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
+		// index into arrays
 		coat::Value pos(fn, uint64_t(0), "pos");
 
-		coat::do_while(fn, [&]{
-			// rptr[pos] = (make_vector<8>(fn, aptr[pos]) += bptr[pos]) /= 2;
-			auto vec = coat::make_vector<8>(fn, aptr[pos]);
-			vec += bptr[pos];
-			vec /= 2;
-			vec.store(rptr[pos]);
-
-			pos += vec.getWidth();
-		}, pos <= sze);
-		//TODO: tail handling
+		// check if at least one vector of work
+		coat::if_then(fn, sze > vectorsize, [&]{
+			// vectorized loop
+			coat::do_while(fn, [&]{
+				// rptr[pos] = (make_vector<vectorsize>(fn, aptr[pos]) += bptr[pos]) /= 2;
+				auto vec = coat::make_vector<vectorsize>(fn, aptr[pos]);
+				vec += bptr[pos];
+				vec /= 2;
+				vec.store(rptr[pos]);
+				// move to next vector
+				pos += vec.getWidth();
+			}, pos < sze);
+			// reverse increase as it went over sze
+			pos -= vectorsize;
+		});
+		// tail handling
+		coat::loop_while(fn, pos < sze, [&]{
+			auto a = fn.getValue<uint32_t>();
+			a = aptr[pos];
+			rptr[pos] = (a += bptr[pos]) /= 2;
+			++pos;
+		});
 		coat::ret(fn);
 	}
+
 #ifdef ENABLE_LLVMJIT
 	if(!llvmrt.verifyFunctions()){
 		puts("verification failed. aborting.");
@@ -93,7 +111,7 @@ static void print(const std::vector<uint32_t> &vec){
 int main(){
 	// generate some data
 	std::vector<uint32_t> a, b, r, e;
-	static const int datasize = 4*1024*1024;
+	static const int datasize = 4*1024*1024 + 3;
 	a.resize(datasize);
 	std::iota(a.begin(), a.end(), 0);
 	b.resize(datasize);
