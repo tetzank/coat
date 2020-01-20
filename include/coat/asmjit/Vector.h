@@ -113,21 +113,100 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		return *this;
 	}
 
-	Vector &operator>>=(int amount){
-		static_assert(sizeof(T) > 1, "shift does not support byte element size");
+	Vector &operator-=(const Vector &other){
 		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
 			// 128 bit SSE
 			switch(sizeof(T)){
-				case 2: cc.psrlw(reg, amount); break;
-				case 4: cc.psrld(reg, amount); break;
-				case 8: cc.psrlq(reg, amount); break;
+				case 1: cc.psubb(reg, other.reg); break;
+				case 2: cc.psubw(reg, other.reg); break;
+				case 4: cc.psubd(reg, other.reg); break;
+				case 8: cc.psubq(reg, other.reg); break;
 			}
 		}else{
 			// 256 bit AVX
 			switch(sizeof(T)){
-				case 2: cc.vpsrlw(reg, reg, amount); break;
-				case 4: cc.vpsrld(reg, reg, amount); break;
-				case 8: cc.vpsrlq(reg, reg, amount); break;
+				case 1: cc.vpsubb(reg, reg, other.reg); break;
+				case 2: cc.vpsubw(reg, reg, other.reg); break;
+				case 4: cc.vpsubd(reg, reg, other.reg); break;
+				case 8: cc.vpsubq(reg, reg, other.reg); break;
+			}
+		}
+		return *this;
+	}
+	Vector &operator-=(Ref<F,Value<F,T>> &&other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			other.mem.setSize(16); // change to xmmword
+			switch(sizeof(T)){
+				case 1: cc.psubb(reg, other); break;
+				case 2: cc.psubw(reg, other); break;
+				case 4: cc.psubd(reg, other); break;
+				case 8: cc.psubq(reg, other); break;
+			}
+		}else{
+			// 256 bit AVX
+			other.mem.setSize(32); // change to ymmword
+			switch(sizeof(T)){
+				case 1: cc.vpsubb(reg, reg, other); break;
+				case 2: cc.vpsubw(reg, reg, other); break;
+				case 4: cc.vpsubd(reg, reg, other); break;
+				case 8: cc.vpsubq(reg, reg, other); break;
+			}
+		}
+		return *this;
+	}
+
+	Vector &operator<<=(int amount){
+		static_assert(sizeof(T) > 1, "shift does not support byte element size");
+		// shift left same for signed and unsigned types
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			switch(sizeof(T)){
+				case 2: cc.psllw(reg, amount); break;
+				case 4: cc.pslld(reg, amount); break;
+				case 8: cc.psllq(reg, amount); break;
+			}
+		}else{
+			// 256 bit AVX
+			switch(sizeof(T)){
+				case 2: cc.vpsllw(reg, reg, amount); break;
+				case 4: cc.vpslld(reg, reg, amount); break;
+				case 8: cc.vpsllq(reg, reg, amount); break;
+			}
+		}
+		return *this;
+	}
+
+	Vector &operator>>=(int amount){
+		static_assert(sizeof(T) > 1, "shift does not support byte element size");
+		static_assert(!(std::is_signed_v<T> && sizeof(T) == 8), "no arithmetic shift right for 64 bit values");
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			if constexpr(std::is_signed_v<T>){
+				switch(sizeof(T)){
+					case 2: cc.psraw(reg, amount); break;
+					case 4: cc.psrad(reg, amount); break;
+				}
+			}else{
+				switch(sizeof(T)){
+					case 2: cc.psrlw(reg, amount); break;
+					case 4: cc.psrld(reg, amount); break;
+					case 8: cc.psrlq(reg, amount); break;
+				}
+			}
+		}else{
+			// 256 bit AVX
+			if constexpr(std::is_signed_v<T>){
+				switch(sizeof(T)){
+					case 2: cc.vpsraw(reg, reg, amount); break;
+					case 4: cc.vpsrad(reg, reg, amount); break;
+				}
+			}else{
+				switch(sizeof(T)){
+					case 2: cc.vpsrlw(reg, reg, amount); break;
+					case 4: cc.vpsrld(reg, reg, amount); break;
+					case 8: cc.vpsrlq(reg, reg, amount); break;
+				}
 			}
 		}
 		return *this;
@@ -142,6 +221,47 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		}
 		return *this;
 	}
+
+	Vector &operator&=(const Vector &other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			cc.pand(reg, other);
+		}else{
+			// 256 bit AVX
+			cc.vpand(reg, reg, other);
+		}
+		return *this;
+	}
+	Vector &operator|=(const Vector &other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			cc.por(reg, other);
+		}else{
+			// 256 bit AVX
+			cc.vpor(reg, reg, other);
+		}
+		return *this;
+	}
+	Vector &operator^=(const Vector &other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			cc.pxor(reg, other);
+		}else{
+			// 256 bit AVX
+			cc.vpxor(reg, reg, other);
+		}
+		return *this;
+	}
+	/*Vector &andnot(const Vector &other){
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			cc.pandn(reg, other);
+		}else{
+			// 256 bit AVX
+			cc.vpandn(reg, reg, other);
+		}
+		return *this;
+	}*/
 };
 
 
