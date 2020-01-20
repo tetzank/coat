@@ -20,6 +20,7 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 	static_assert(sizeof(T)*width == 128/8 || sizeof(T)*width == 256/8,
 		"only 128-bit and 256-bit vector instructions supported at the moment");
 
+	//FIXME: not a good idea when AVX512 comes into play
 	using reg_type = std::conditional_t<sizeof(T)*width==128/8,
 						::asmjit::x86::Xmm,
 						::asmjit::x86::Ymm // only these two are allowed
@@ -156,6 +157,16 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		return *this;
 	}
 
+	Vector &operator/=(int amount){
+		if(is_power_of_two(amount)){
+			operator>>=(clog2(amount));
+		}else{
+			//TODO
+			assert(false);
+		}
+		return *this;
+	}
+
 	Vector &operator<<=(int amount){
 		static_assert(sizeof(T) > 1, "shift does not support byte element size");
 		// shift left same for signed and unsigned types
@@ -208,16 +219,6 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 					case 8: cc.vpsrlq(reg, reg, amount); break;
 				}
 			}
-		}
-		return *this;
-	}
-
-	Vector &operator/=(int amount){
-		if(is_power_of_two(amount)){
-			operator>>=(clog2(amount));
-		}else{
-			//TODO
-			assert(false);
 		}
 		return *this;
 	}

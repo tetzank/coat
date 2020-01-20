@@ -25,6 +25,12 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
+	llvm::Value *refload(const Ref<F,Value<F,T>> &other) const {
+		// cast array ptr to vector ptr
+		llvm::Value *vecptr = cc.CreateBitCast(other.mem, memreg->getType());
+		return cc.CreateLoad(vecptr, "refload");
+	}
+
 	operator const llvm::Value*() const { return load(); }
 	operator       llvm::Value*()       { return load(); }
 
@@ -42,12 +48,8 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 
 	unsigned getWidth() const { return width; }
 
-	Vector &operator=(Ref<F,Value<F,T>> &&src){
-		// cast array ptr to vector ptr
-		llvm::Value *vecptr = cc.CreateBitCast(src.mem, memreg->getType());
-		store( cc.CreateLoad(vecptr, "vectorload") );
-		return *this;
-	}
+	//TODO: aligned load & store
+	Vector &operator=(Ref<F,Value<F,T>> &&src){ store( refload(src) ); return *this; }
 
 	void store(Ref<F,Value<F,T>> &&dest) const {
 		// cast array ptr to vector ptr
@@ -57,22 +59,11 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 
 
 	// vector types are first class in LLVM IR, most operations accept them as operands
-	Vector &operator+=(const Vector &other){ store( cc.CreateAdd(load(), other.load()) ); return *this; }
-	Vector &operator+=(const Ref<F,Value<F,T>> &other){
-		// cast array ptr to vector ptr
-		llvm::Value *vecptr = cc.CreateBitCast(other.mem, memreg->getType());
-		store( cc.CreateAdd(load(), cc.CreateLoad(vecptr, "vectorload")) );
-		return *this;
-	}
+	Vector &operator+=(const Vector &other){            store( cc.CreateAdd(load(), other.load())   ); return *this; }
+	Vector &operator+=(const Ref<F,Value<F,T>> &other){ store( cc.CreateAdd(load(), refload(other)) ); return *this; }
 
-	Vector &operator>>=(int amount){
-		if constexpr(std::is_signed_v<T>){
-			store( cc.CreateAShr(load(), amount) );
-		}else{
-			store( cc.CreateLShr(load(), amount) );
-		}
-		return *this;
-	}
+	Vector &operator-=(const Vector &other){            store( cc.CreateSub(load(), other.load())   ); return *this; }
+	Vector &operator-=(const Ref<F,Value<F,T>> &other){ store( cc.CreateSub(load(), refload(other)) ); return *this; }
 
 	Vector &operator/=(int amount){
 		llvm::Constant *splat = llvm::ConstantVector::getSplat(
@@ -86,6 +77,22 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 		}
 		return *this;
 	}
+
+
+	Vector &operator<<=(int amount){ store( cc.CreateShl(load(), amount) ); return *this; }
+
+	Vector &operator>>=(int amount){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateAShr(load(), amount) );
+		}else{
+			store( cc.CreateLShr(load(), amount) );
+		}
+		return *this;
+	}
+
+	Vector &operator&=(const Vector &other){ store( cc.CreateAnd(load(), other) ); return *this; }
+	Vector &operator|=(const Vector &other){ store( cc.CreateOr (load(), other) ); return *this; }
+	Vector &operator^=(const Vector &other){ store( cc.CreateXor(load(), other) ); return *this; }
 };
 
 
