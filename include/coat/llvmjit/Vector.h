@@ -79,13 +79,22 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	}
 
 
-	Vector &operator<<=(int amount){ store( cc.CreateShl(load(), amount) ); return *this; }
+	Vector &operator<<=(int amount){          store( cc.CreateShl(load(), amount) ); return *this; }
+	Vector &operator<<=(const Vector &other){ store( cc.CreateShl(load(), other)  ); return *this; }
 
 	Vector &operator>>=(int amount){
 		if constexpr(std::is_signed_v<T>){
 			store( cc.CreateAShr(load(), amount) );
 		}else{
 			store( cc.CreateLShr(load(), amount) );
+		}
+		return *this;
+	}
+	Vector &operator>>=(const Vector &other){
+		if constexpr(std::is_signed_v<T>){
+			store( cc.CreateAShr(load(), other) );
+		}else{
+			store( cc.CreateLShr(load(), other) );
 		}
 		return *this;
 	}

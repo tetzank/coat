@@ -187,6 +187,26 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 		}
 		return *this;
 	}
+	Vector &operator<<=(const Vector &other){
+		static_assert(sizeof(T) > 1, "shift does not support byte element size");
+		// shift left same for signed and unsigned types
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			switch(sizeof(T)){
+				case 2: cc.psllw(reg, other); break;
+				case 4: cc.pslld(reg, other); break;
+				case 8: cc.psllq(reg, other); break;
+			}
+		}else{
+			// 256 bit AVX
+			switch(sizeof(T)){
+				case 2: cc.vpsllw(reg, reg, other); break;
+				case 4: cc.vpslld(reg, reg, other); break;
+				case 8: cc.vpsllq(reg, reg, other); break;
+			}
+		}
+		return *this;
+	}
 
 	Vector &operator>>=(int amount){
 		static_assert(sizeof(T) > 1, "shift does not support byte element size");
@@ -217,6 +237,40 @@ struct Vector<::asmjit::x86::Compiler,T,width> final {
 					case 2: cc.vpsrlw(reg, reg, amount); break;
 					case 4: cc.vpsrld(reg, reg, amount); break;
 					case 8: cc.vpsrlq(reg, reg, amount); break;
+				}
+			}
+		}
+		return *this;
+	}
+	Vector &operator>>=(const Vector &other){
+		static_assert(sizeof(T) > 1, "shift does not support byte element size");
+		static_assert(!(std::is_signed_v<T> && sizeof(T) == 8), "no arithmetic shift right for 64 bit values");
+		if constexpr(std::is_same_v<reg_type,::asmjit::x86::Xmm>){
+			// 128 bit SSE
+			if constexpr(std::is_signed_v<T>){
+				switch(sizeof(T)){
+					case 2: cc.psraw(reg, other); break;
+					case 4: cc.psrad(reg, other); break;
+				}
+			}else{
+				switch(sizeof(T)){
+					case 2: cc.psrlw(reg, other); break;
+					case 4: cc.psrld(reg, other); break;
+					case 8: cc.psrlq(reg, other); break;
+				}
+			}
+		}else{
+			// 256 bit AVX
+			if constexpr(std::is_signed_v<T>){
+				switch(sizeof(T)){
+					case 2: cc.vpsraw(reg, reg, other); break;
+					case 4: cc.vpsrad(reg, reg, other); break;
+				}
+			}else{
+				switch(sizeof(T)){
+					case 2: cc.vpsrlw(reg, reg, other); break;
+					case 4: cc.vpsrld(reg, reg, other); break;
+					case 8: cc.vpsrlq(reg, reg, other); break;
 				}
 			}
 		}
