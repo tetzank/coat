@@ -129,6 +129,48 @@ coat::for_each(coat::Function &ctx, begin, end,         // for( ; begin != end; 
 With the help of lambda expressions, we can format the code in similar way than C++ code, improving readability and maintainability.
 
 
+## Explicit Vectorization
+
+Limited vectorization support is provided by `coat::Vector`, supporting basic arithmetic and bitwise operations.
+The following example shows how to use `coat::Vector` for explicit vectorization.
+It calculates the mean value for each element in two input arrays and writes it to a destination array.
+
+```C++
+// number of elements in vector
+static const int vectorsize = 4;
+{ // EDSL
+	// function parameters: 2 source arrays, destination array, size of arrays
+	auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
+	// index into arrays
+	coat::Value pos(fn, uint64_t(0), "pos");
+
+	// check if at least one vector of work
+	coat::if_then(fn, sze > vectorsize, [&]{
+		// vectorized loop
+		coat::do_while(fn, [&]{
+			// rptr[pos] = (make_vector<vectorsize>(fn, aptr[pos]) += bptr[pos]) /= 2;
+			auto vec = coat::make_vector<vectorsize>(fn, aptr[pos]);
+			vec += bptr[pos];
+			vec /= 2;
+			vec.store(rptr[pos]);
+			// move to next vector
+			pos += vec.getWidth();
+		}, pos < sze);
+		// reverse increase as it went over sze
+		pos -= vectorsize;
+	});
+	// tail handling
+	coat::loop_while(fn, pos < sze, [&]{
+		auto a = fn.getValue<uint32_t>();
+		a = aptr[pos];
+		rptr[pos] = (a += bptr[pos]) /= 2;
+		++pos;
+	});
+	coat::ret(fn);
+}
+```
+
+
 ## Host Program Integration
 
 COAT provides multiple functionalities to make interaction between the generated code and the host program as seamless as possible.
