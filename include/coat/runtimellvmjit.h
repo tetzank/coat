@@ -34,6 +34,10 @@
 
 #include <llvm/IR/Verifier.h>
 
+#ifndef NDEBUG
+#  include <iostream>
+#endif
+
 
 namespace coat {
 
@@ -62,6 +66,24 @@ private:
 
 	std::unordered_map<std::string,llvm::Function*> externalFunctions;
 
+	static std::unique_ptr<llvm::TargetMachine> march_native(){
+		llvm::orc::JITTargetMachineBuilder TMD = cantFail(llvm::orc::JITTargetMachineBuilder::detectHost());
+		
+		//FIXME: this is done in detectHost in newer LLVM versions
+		// enable all CPU features
+		llvm::SubtargetFeatures stf;
+		llvm::StringMap<bool> featuremap;
+		llvm::sys::getHostCPUFeatures(featuremap);
+		for(const auto &feature : featuremap){
+			stf.AddFeature(feature.first(), feature.second);
+		}
+		TMD.setCPU(llvm::sys::getHostCPUName());
+		TMD.addFeatures(stf.getFeatures());
+
+		return cantFail(TMD.createTargetMachine());
+	}
+
+
 public:
 	static void initTarget(){
 		llvm::InitializeNativeTarget();
@@ -69,7 +91,7 @@ public:
 	}
 
 	runtimellvmjit()
-		: tm(llvm::EngineBuilder().selectTarget())
+		: tm(march_native())
 		, dl(tm->createDataLayout())
 		, ObjectLayer(ES,
 			[this](llvm::orc::VModuleKey) {
@@ -108,6 +130,12 @@ public:
 		llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
 
 		gdbEventListener = llvm::JITEventListener::createGDBRegistrationListener();
+
+#ifndef NDEBUG
+		std::cout << "Triple: " << llvm::sys::getProcessTriple()
+				<< "\nCPU: " << tm->getTargetCPU().str()
+				<< "\nFeatures: " << tm->getTargetFeatureString().str() << '\n';
+#endif
 	}
 
 	void reset(){
