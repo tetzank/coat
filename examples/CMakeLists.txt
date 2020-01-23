@@ -53,3 +53,11 @@ if(ENABLE_LLVMJIT)
 	target_link_libraries(vectormeanLLVM ${LLVM_LIBRARIES})
 	add_test(test_vectormeanLLVM vectormeanLLVM)
 endif()
+
+
+if(ENABLE_LLVMJIT)
+	add_executable(vectorshuffleLLVM vectorshuffle.cpp)
+	target_compile_definitions(vectorshuffleLLVM PRIVATE "ENABLE_LLVMJIT")
+	target_link_libraries(vectorshuffleLLVM ${LLVM_LIBRARIES})
+	#add_test(test_vectormeanLLVM vectorshLLVM)
+endif()

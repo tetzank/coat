@@ -36,6 +36,7 @@ void mean_coat(
 	coat::runtimeasmjit asmrt;
 	// context object
 	coat::Function<coat::runtimeasmjit,func_type> fn(asmrt, "gen_asmjit");
+	fn.enableCodeDump();
 #elif defined(ENABLE_LLVMJIT)
 	// init
 	coat::runtimellvmjit::initTarget();

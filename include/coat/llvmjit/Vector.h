@@ -34,6 +34,8 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	operator const llvm::Value*() const { return load(); }
 	operator       llvm::Value*()       { return load(); }
 
+	unsigned getWidth() const { return width; }
+
 	Vector(F &cc, const char *name="") : cc(cc) {
 		llvm::Type *element_type;
 		// llvm IR has no types for unsigned/signed integers
@@ -46,16 +48,32 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 		memreg = allocateStackVariable(cc, llvm::VectorType::get(element_type, width), name);
 	}
 
-	unsigned getWidth() const { return width; }
+	// copy ctor
+	Vector(const Vector &other) = delete; //FIXME: no real copy for now
+	// move ctor, just "steal" memreg
+	Vector(Vector &&other) : cc(other.cc), memreg(other.memreg) {}
+
+	// copy assignment with real copy
+	Vector &operator=(const Vector &other) = delete; //FIXME: no real copy for now
+	// copy assignment from temporary, "steal" memory location
+	Vector &operator=(Vector &&other){
+		memreg = other.memreg;
+		return *this;
+	}
 
 	//TODO: aligned load & store
 	Vector &operator=(Ref<F,Value<F,T>> &&src){ store( refload(src) ); return *this; }
 
+	//FIXME: reference as parameter looks unintuitive, pointer would make more sense from a C++ perspective
 	void store(Ref<F,Value<F,T>> &&dest) const {
 		// cast array ptr to vector ptr
 		llvm::Value *vecptr = cc.CreateBitCast(dest.mem, memreg->getType());
 		cc.CreateStore(load(), vecptr);
 	}
+
+	//TODO
+	//void compressstore(Ref<F,Value<F,T>> &&dest, ) const {
+	//}
 
 
 	// vector types are first class in LLVM IR, most operations accept them as operands
@@ -99,9 +117,15 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 		return *this;
 	}
 
-	Vector &operator&=(const Vector &other){ store( cc.CreateAnd(load(), other) ); return *this; }
-	Vector &operator|=(const Vector &other){ store( cc.CreateOr (load(), other) ); return *this; }
-	Vector &operator^=(const Vector &other){ store( cc.CreateXor(load(), other) ); return *this; }
+	Vector &operator&=(const Vector &other){ store( cc.CreateAnd(load(), other.load()) ); return *this; }
+	Vector &operator|=(const Vector &other){ store( cc.CreateOr (load(), other.load()) ); return *this; }
+	Vector &operator^=(const Vector &other){ store( cc.CreateXor(load(), other.load()) ); return *this; }
+
+
+	// comparisons
+	Vector operator==(const Vector &other) const { Vector r(cc); r.store( cc.CreateICmpEQ(load(), other.load()) ); return r; }
+	Vector operator!=(const Vector &other) const { Vector r(cc); r.store( cc.CreateICmpNE(load(), other.load()) ); return r; }
+	//TODO: define all other comparisons
 };
 
 
@@ -111,6 +135,70 @@ Vector<llvm::IRBuilder<>,T,width> make_vector(llvm::IRBuilder<> &cc, Ref<llvm::I
 	v = std::move(src);
 	return v;
 }
+
+template<typename T, unsigned width>
+Vector<llvm::IRBuilder<>,T,width> shuffle(
+	llvm::IRBuilder<> &cc,
+	const Vector<llvm::IRBuilder<>,T,width> &vec,
+	std::array<unsigned,width> &&indexes
+){
+	Vector<llvm::IRBuilder<>,T,width> res(cc);
+	llvm::Value *shuffled = cc.CreateShuffleVector(vec.load(), llvm::UndefValue::get(vec.type()), indexes);
+	res.store(shuffled);
+	return res;
+}
+
+template<typename T, unsigned width>
+Vector<llvm::IRBuilder<>,T,width> shuffle(
+	llvm::IRBuilder<> &cc,
+	const Vector<llvm::IRBuilder<>,T,width> &vec0,
+	const Vector<llvm::IRBuilder<>,T,width> &vec1,
+	std::array<unsigned,width> &&indexes
+){
+	Vector<llvm::IRBuilder<>,T,width> res(cc);
+	llvm::Value *shuffled = cc.CreateShuffleVector(vec0, vec1, indexes);
+	res.store(shuffled);
+	return res;
+}
+
+template<typename T, unsigned width>
+Vector<llvm::IRBuilder<>,T,width> min(
+	llvm::IRBuilder<> &cc,
+	const Vector<llvm::IRBuilder<>,T,width> &vec0,
+	const Vector<llvm::IRBuilder<>,T,width> &vec1
+){
+	Vector<llvm::IRBuilder<>,T,width> res(cc);
+	llvm::Value *v0 = vec0.load(), *v1 = vec1.load();
+	llvm::Value *comparison;
+	if constexpr(std::is_signed_v<T>){
+		comparison = cc.CreateICmpSLT(v0, v1);
+	}else{
+		comparison = cc.CreateICmpULT(v0, v1);
+	}
+	llvm::Value *s = cc.CreateSelect(comparison, v0, v1);
+	res.store(s);
+	return res;
+}
+
+template<typename T, unsigned width>
+Vector<llvm::IRBuilder<>,T,width> max(
+	llvm::IRBuilder<> &cc,
+	const Vector<llvm::IRBuilder<>,T,width> &vec0,
+	const Vector<llvm::IRBuilder<>,T,width> &vec1
+){
+	Vector<llvm::IRBuilder<>,T,width> res(cc);
+	llvm::Value *v0 = vec0.load(), *v1 = vec1.load();
+	llvm::Value *comparison;
+	if constexpr(std::is_signed_v<T>){
+		comparison = cc.CreateICmpSGT(v0, v1);
+	}else{
+		comparison = cc.CreateICmpUGT(v0, v1);
+	}
+	llvm::Value *s = cc.CreateSelect(comparison, v0, v1);
+	res.store(s);
+	return res;
+}
+
 
 } // namespace
 
