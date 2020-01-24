@@ -75,6 +75,18 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	//void compressstore(Ref<F,Value<F,T>> &&dest, ) const {
 	//}
 
+	//FIXME: should be VectorMask
+	Value<F,uint64_t> movemask() const {
+		Value<F,uint64_t> result(cc);
+		llvm::Constant *zeroinitializer = llvm::ConstantVector::getSplat(
+			width,
+			llvm::ConstantInt::get( ((llvm::VectorType*)type())->getElementType(), 0 )
+		);
+		llvm::Value *cmp = cc.CreateICmpSLT(load(), zeroinitializer);
+		llvm::Value *cast = cc.CreateBitCast(cmp, llvm::IntegerType::get(cc.getContext(), width));
+		result.store( cc.CreateZExt(cast, result.type()) );
+		return result;
+	}
 
 	// vector types are first class in LLVM IR, most operations accept them as operands
 	Vector &operator+=(const Vector &other){            store( cc.CreateAdd(load(), other.load())   ); return *this; }
@@ -123,6 +135,7 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 
 
 	// comparisons
+	//FIXME: should return VectorMask, would fit better with AVX512
 	Vector operator==(const Vector &other) const { Vector r(cc); r.store( cc.CreateICmpEQ(load(), other.load()) ); return r; }
 	Vector operator!=(const Vector &other) const { Vector r(cc); r.store( cc.CreateICmpNE(load(), other.load()) ); return r; }
 	//TODO: define all other comparisons
