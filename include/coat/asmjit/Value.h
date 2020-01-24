@@ -225,6 +225,12 @@ struct Value<::asmjit::x86::Compiler,T> final : public ValueBase<::asmjit::x86::
 		}
 	}
 
+	Value popcount() const {
+		Value ret(cc);
+		cc.popcnt(ret.reg, reg);
+		return ret;
+	}
+
 	// operators with assignment
 	Value &operator<<=(const D<Value> &other){
 		if constexpr(std::is_signed_v<T>){

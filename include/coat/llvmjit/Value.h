@@ -140,6 +140,15 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 		}
 	}
 
+	Value popcount() const {
+		Value ret(cc);
+		// call intrinsic
+		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ID::ctpop, {load()});
+		pop->setTailCall();
+		ret.store(pop);
+		return ret;
+	}
+
 	Value &operator<<=(const Value &other){ store( cc.CreateShl(load(), other.load()) ); return *this; }
 	Value &operator<<=(int amount){ store( cc.CreateShl(load(), amount) ); return *this; }
 	// memory operand not possible on right side
