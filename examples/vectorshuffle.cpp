@@ -48,13 +48,12 @@ int main(){
 		pos += 4;
 		vmax.store(rptr[pos]);
 
+
 		//auto vrot1 = coat::shuffle(fn, vb, {3, 0, 1, 2}); // rotating right
 		//auto vrot2 = coat::shuffle(fn, vb, {1, 2, 3, 0}); // rotating left
 		//auto vrot3 = coat::shuffle(fn, vb, {2, 3, 0, 1}); // between
 
-		//auto vmask = (va==vb |= va==vrot1) |= (va==vrot2 |= va==vrot3);
-
-		//vrot1.store(rptr[pos]);
+		//va.compressstore(rptr[pos], va == vb);
 
 		coat::ret(fn);
 	}
@@ -76,12 +75,12 @@ int main(){
 
 	// generate some data
 	std::vector<uint32_t> inputa, inputb, result;
-	static const int datasize = 8;
+	static const int datasize = 16;
 	inputa.resize(datasize);
 	std::iota(inputa.begin(), inputa.end(), 0);
 	inputb.resize(datasize);
 	std::iota(inputb.begin(), inputb.end(), 0);
-	result.resize(datasize);
+	result.resize(datasize * 2);
 
 	raise(SIGTRAP); // stop debugger here
 	foo(inputa.data(), inputb.data(), result.data(), result.size());

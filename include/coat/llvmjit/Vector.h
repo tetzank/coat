@@ -72,9 +72,12 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 		cc.CreateStore(load(), vecptr);
 	}
 
-	//TODO
-	//void compressstore(Ref<F,Value<F,T>> &&dest, ) const {
-	//}
+	//TODO: storing to reference is unintuitive, change to pointer
+	void compressstore(Ref<F,Value<F,T>> &&dest, const VectorMask<F,width> &mask) const {
+		// call intrinsic
+		//FIXME: fallback (no AVX512) fails in LLVM 7 (LLVM error), seems to be fixed since LLVM 9, need to upgrade
+		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ID::masked_compressstore, {load(), dest.mem, mask.load()});
+		pop->setTailCall();
 	}
 
 	// vector types are first class in LLVM IR, most operations accept them as operands
