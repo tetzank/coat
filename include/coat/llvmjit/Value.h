@@ -290,6 +290,16 @@ template<typename T> Value(::llvm::IRBuilder<>&, T val, const char *) -> Value<:
 template<typename FnPtr, typename T> Value(Function<runtimellvmjit,FnPtr>&, T val, const char *) -> Value<::llvm::IRBuilder<>,T>;
 template<typename T> Value(const Ref<llvm::IRBuilder<>,Value<llvm::IRBuilder<>,T>>&) -> Value<llvm::IRBuilder<>,T>;
 
+
+template<typename T>
+Value<llvm::IRBuilder<>,T> make_value(llvm::IRBuilder<> &cc, Condition<llvm::IRBuilder<>> &&cond){
+	Value<llvm::IRBuilder<>,T> val(cc);
+	cond.compare();
+	val.store( cc.CreateBitCast(cond.cmp_result, val.type()) );
+	return val;
+}
+
+
 } // namespace
 
 #endif
