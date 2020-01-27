@@ -73,8 +73,7 @@ void mean_coat(
 		});
 		// tail handling
 		coat::loop_while(fn, pos < sze, [&]{
-			auto a = fn.getValue<uint32_t>();
-			a = aptr[pos];
+			coat::Value a = aptr[pos];
 			rptr[pos] = (a += bptr[pos]) /= 2;
 			++pos;
 		});
