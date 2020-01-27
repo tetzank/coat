@@ -295,7 +295,7 @@ template<typename T>
 Value<llvm::IRBuilder<>,T> make_value(llvm::IRBuilder<> &cc, Condition<llvm::IRBuilder<>> &&cond){
 	Value<llvm::IRBuilder<>,T> val(cc);
 	cond.compare();
-	val.store( cc.CreateBitCast(cond.cmp_result, val.type()) );
+	val.store( cc.CreateZExt(cond.cmp_result, val.type()) );
 	return val;
 }
 
