@@ -52,7 +52,13 @@ void mean_coat(
 	static const int vectorsize = 4;
 	{ // EDSL
 		// function parameters: 2 source arrays, destination array, size of arrays
-		auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
+		//FIXME: does not work in clang, bindings cannot be captured in lambda, do it the old fashioned way
+		//auto [aptr,bptr,rptr,sze] = fn.getArguments("a", "b", "r", "size");
+		auto args = fn.getArguments("a", "b", "r", "size");
+		auto &aptr = std::get<0>(args);
+		auto &bptr = std::get<1>(args);
+		auto &rptr = std::get<2>(args);
+		auto &sze = std::get<3>(args);
 		// index into arrays
 		coat::Value pos(fn, uint64_t(0), "pos");
 
@@ -73,7 +79,9 @@ void mean_coat(
 		});
 		// tail handling
 		coat::loop_while(fn, pos < sze, [&]{
-			coat::Value a = aptr[pos];
+			//coat::Value a = aptr[pos]; //FIXME: does not work with source line profiling
+			auto a = fn.getValue<uint32_t>();
+			a = aptr[pos];
 			rptr[pos] = (a += bptr[pos]) /= 2;
 			++pos;
 		});
