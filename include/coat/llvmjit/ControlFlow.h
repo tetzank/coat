@@ -7,7 +7,7 @@ namespace coat {
 inline void jump(llvm::IRBuilder<> &cc, llvm::BasicBlock *bb_dest){
 	cc.CreateBr(bb_dest);
 }
-inline void jump(llvm::IRBuilder<> &cc, Condition<::llvm::IRBuilder<>> cond, llvm::BasicBlock *bb_success, llvm::BasicBlock *bb_fail){
+inline void jump(llvm::IRBuilder<> &, Condition<::llvm::IRBuilder<>> cond, llvm::BasicBlock *bb_success, llvm::BasicBlock *bb_fail){
 	cond.compare();
 	cond.jump(bb_success, bb_fail);
 }

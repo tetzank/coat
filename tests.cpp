@@ -108,7 +108,7 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	int divisor = atoi(argv[1]);
+	//int divisor = atoi(argv[1]); //FIXME: remove, also from program arguments
 	size_t cnt = argc - 2;
 	int *array = new int[cnt];
 	for(int i=2; i<argc; ++i){

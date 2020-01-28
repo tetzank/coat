@@ -76,6 +76,7 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	void compressstore(Ref<F,Value<F,T>> &&dest, const VectorMask<F,width> &mask) const {
 		// call intrinsic
 		//FIXME: fallback (no AVX512) fails in LLVM 7 (LLVM error), seems to be fixed since LLVM 9, need to upgrade
+		//TODO: the generic fallback is not efficient anyway, roll our own
 		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ID::masked_compressstore, {load(), dest.mem, mask.load()});
 		pop->setTailCall();
 	}
