@@ -100,6 +100,7 @@ void mean_coat(
 		llvmrt.print("failed_opt.ll");
 		exit(EXIT_FAILURE);
 	}
+	llvmrt.dumpAssembly("llvmjit_mean.s");
 #endif
 	func_type foo = fn.finalize();
 

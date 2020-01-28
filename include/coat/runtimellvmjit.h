@@ -270,6 +270,20 @@ public:
 		std::ofstream of(filename);
 		of << os.str();
 	}
+
+	void dumpAssembly(const char *filename){
+		std::string str;
+		{
+			llvm::legacy::PassManager pm;
+			llvm::raw_string_ostream os(str);
+			llvm::buffer_ostream pstream(os);
+			tm->Options.MCOptions.AsmVerbose = true; // get some comments linking it to LLVM IR
+			tm->addPassesToEmitFile(pm, pstream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile);
+			pm.run(*module);
+		}
+		std::ofstream of(filename);
+		of << str;
+	}
 };
 
 } // namespace
