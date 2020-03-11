@@ -180,7 +180,7 @@ This includes calling functions and accessing data structures of the host progra
 ### Calling Functions
 
 Not every function benefits from JIT compilation.
-COAT provides the helper function `FunctionCall()` generating a function call to the passed funtion pointer.
+COAT provides the helper function `FunctionCall()` generating a function call to the passed function pointer.
 This way, you do not need to reimplement existing functions with COAT to make them usable for JIT compilation.
 You just call them from the generated code with the correct calling convention of the system.
 
@@ -197,7 +197,7 @@ coat::FunctionCall(fn, log, "log", value);
 ```
 
 When the called function has a return value, it can be captured in a "meta-variable".
-The list of parameters and return type is infered from the function pointer.
+The list of parameters and the return type are inferred from the function pointer.
 
 ```C++
 // function to call, residing outside of generated code
@@ -224,8 +224,7 @@ The size of the data structure stays unchanged.
 ```C++
 class my_vector {
 // declare all member variables: int *start, *finish, *capacity;
-// macro adds metadata to calculate
-// data layout at compile-time
+// macro adds metadata to calculate data layout at compile-time
 #define MEMBERS(x)    \
     x(int*, start)    \
     x(int*, finish)   \
@@ -306,7 +305,7 @@ func_t foo = fn.finalize();
 
 The library is header-only. Small test programs are included to show how to use the library.
 
-Fetch JIT engines and build them (use more or less cores by changing `-j`, LLVM can take a while...):
+Fetch JIT engines and build them (use `-j` for parallel compilation, LLVM can take a while...):
 ```
 $ ./buildDependencies.sh -j8
 ```
