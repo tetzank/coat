@@ -143,6 +143,21 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 	Condition<F> operator!=(const Ptr &other) const { return {cc, reg, other.reg, ConditionFlag::ne}; }
 };
 
+
+template<typename dest_type, typename src_type>
+Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,std::remove_pointer_t<dest_type>>>
+cast(const Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,src_type>> &src){
+	static_assert(std::is_pointer_v<dest_type>, "a pointer type can only be casted to another pointer type");
+
+	//TODO: find a way to do it without copies but no surprises for user
+	// create new pointer with new register
+	Ptr<::asmjit::x86::Compiler,Value<::asmjit::x86::Compiler,std::remove_pointer_t<dest_type>>> res(src.cc);
+	// copy pointer address between registers
+	src.cc.mov(res.reg, src.reg);
+	// return new pointer
+	return res;
+}
+
 } // namespace
 
 #endif

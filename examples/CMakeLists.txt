@@ -13,6 +13,20 @@ endif()
 
 
 if(ENABLE_ASMJIT)
+	add_executable(cast cast.cpp)
+	target_compile_definitions(cast PRIVATE "ENABLE_ASMJIT")
+	target_link_libraries(cast ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})
+	add_test(test_cast cast)
+endif()
+if(ENABLE_LLVMJIT)
+	add_executable(castLLVM cast.cpp)
+	target_compile_definitions(castLLVM PRIVATE "ENABLE_LLVMJIT")
+	target_link_libraries(castLLVM ${LLVM_LIBRARIES})
+	add_test(test_castLLVM castLLVM)
+endif()
+
+
+if(ENABLE_ASMJIT)
 	add_executable(call call.cpp)
 	target_compile_definitions(call PRIVATE "ENABLE_ASMJIT")
 	target_link_libraries(call ${ASMJIT_LIBRARIES} ${ASMJIT_PERF_LIBRARIES})

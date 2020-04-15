@@ -25,7 +25,7 @@ struct Ref<::llvm::IRBuilder<>,T> {
 		cc.CreateStore(other.load(), mem);
 		return *this;
 	}
-	Ref &operator=(int value){
+	Ref &operator=(typename inner_type::value_type value){
 		cc.CreateStore(llvm::ConstantInt::get(type(), value), mem);
 		return *this;
 	}

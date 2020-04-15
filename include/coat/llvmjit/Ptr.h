@@ -129,6 +129,25 @@ struct Ptr<::llvm::IRBuilder<>,T> {
 	Condition<F> operator!=(const Ptr &other) const { return {cc, memreg, other.memreg, ConditionFlag::ne}; }
 };
 
+
+template<typename dest_type, typename src_type>
+Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_pointer_t<dest_type>>>
+cast(const Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,src_type>> &src){
+	static_assert(std::is_pointer_v<dest_type>, "a pointer type can only be casted to another pointer type");
+
+	// create new pointer
+	Ptr<::llvm::IRBuilder<>,Value<::llvm::IRBuilder<>,std::remove_pointer_t<dest_type>>> res(src.cc);
+	// cast between pointer types
+	res.store(
+		src.cc.CreateBitCast(
+			src.load(),
+			res.type()
+		)
+	);
+	// return new pointer
+	return res;
+}
+
 } // namespace
 
 #endif

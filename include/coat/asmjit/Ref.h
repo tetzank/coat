@@ -30,9 +30,24 @@ struct Ref<::asmjit::x86::Compiler,T> {
 		DL;
 		return *this;
 	}
-	Ref &operator=(const D<int> &other){
-		cc.mov(mem, ::asmjit::imm(OP));
-		DL;
+	Ref &operator=(const D<typename inner_type::value_type> &other){
+		if constexpr(sizeof(typename inner_type::value_type) == 8){
+			// mov to memory operand not allowed with imm64
+			// copy immediate first to register, then store
+			::asmjit::x86::Gp temp;
+			if constexpr(std::is_signed_v<typename inner_type::value_type>){
+				temp = cc.newInt64();
+			}else{
+				temp = cc.newUInt64();
+			}
+			cc.mov(temp, ::asmjit::imm(OP));
+			DL;
+			cc.mov(mem, temp);
+			DL;
+		}else{
+			cc.mov(mem, ::asmjit::imm(OP));
+			DL;
+		}
 		return *this;
 	}
 	// arithmetic + assignment skipped for now

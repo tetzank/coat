@@ -56,7 +56,9 @@ inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
 	if constexpr(std::is_pointer_v<T>){
 		using base_type = std::remove_cv_t<std::remove_pointer_t<T>>;
 		if constexpr(std::is_integral_v<base_type>){
-			if constexpr(std::is_same_v<base_type,short> || std::is_same_v<base_type,unsigned short>){
+			if constexpr(std::is_same_v<base_type,char> || std::is_same_v<base_type,unsigned char>){
+				return llvm::Type::getInt8PtrTy(ctx);
+			}else if constexpr(std::is_same_v<base_type,short> || std::is_same_v<base_type,unsigned short>){
 				return llvm::Type::getInt16PtrTy(ctx);
 			}else if constexpr(std::is_same_v<base_type,int> || std::is_same_v<base_type,unsigned>){
 				return llvm::Type::getInt32PtrTy(ctx);
@@ -74,6 +76,8 @@ inline llvm::Type *getLLVMType(llvm::LLVMContext &ctx){
 	}else{
 		if constexpr(std::is_same_v<T,void>){
 			return llvm::Type::getVoidTy(ctx);
+		}else if constexpr(std::is_same_v<T,char> || std::is_same_v<T,unsigned char>){
+			return llvm::Type::getInt8Ty(ctx);
 		}else if constexpr(std::is_same_v<T,short> || std::is_same_v<T,unsigned short>){
 			return llvm::Type::getInt16Ty(ctx);
 		}else if constexpr(std::is_same_v<T,int> || std::is_same_v<T,unsigned>){
