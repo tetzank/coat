@@ -64,8 +64,6 @@ private:
 	// optimization level
 	int optLevel=3;
 
-	std::unordered_map<std::string,llvm::Function*> externalFunctions;
-
 	static std::unique_ptr<llvm::TargetMachine> march_native(){
 		llvm::orc::JITTargetMachineBuilder TMD = cantFail(llvm::orc::JITTargetMachineBuilder::detectHost());
 		
@@ -142,7 +140,6 @@ public:
 		module.reset(new llvm::Module("blamodule", context)); // useless module name
 		module->setDataLayout(dl);
 		functions.clear();
-		externalFunctions.clear();
 
 #if 0
 		//DEBUG - BEGIN
@@ -165,21 +162,6 @@ public:
 	}
 	//DEBUG - END
 #endif
-
-	llvm::Function *addExternalFunction(const char *name, llvm::FunctionType *func_type){
-		llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, name, module.get());
-		func->setCallingConv(llvm::CallingConv::C);
-		externalFunctions.emplace(name, func);
-		return func;
-	}
-	llvm::Function *getExternalFunction(const char *name) const {
-		auto it = externalFunctions.find(name);
-		if(it != externalFunctions.end()){
-			return it->second;
-		}else{
-			return nullptr;
-		}
-	}
 
 	bool verifyFunction(llvm::Function *jit_func){
 		std::string str;
