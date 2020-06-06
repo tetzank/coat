@@ -116,7 +116,7 @@ public:
 				//FIXME: error handling when symbol not found
 				//return nullptr;
 				// hard crash
-				__builtin_trap(); // symbol not found, did you forget to compile with "-rdynamic"?
+				__builtin_trap(); // symbol not found
 			},
 			[](llvm::Error err){
 				cantFail(std::move(err), "lookupFlags failed");

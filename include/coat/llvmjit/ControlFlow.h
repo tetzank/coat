@@ -187,14 +187,15 @@ void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
 }
 
 
-//FIXME: requires that the function is exported as a dynamic symbol
-//       on linux this is only the case when linking a shared library
-//       for an executable, -rdynamic flag has to be used during linking
-
 // calling function outside of generated code
 template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(llvm::IRBuilder<> &cc, R(* /*fnptr*/)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
+FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
+	// adds address of funtion pointer to a list of explicit symbols
+	// which is search first during symbol lookup
+	// overwrites the same entry when called multiple times
+	llvm::sys::DynamicLibrary::AddSymbol(name, (void*)fnptr);
+
 	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
 	llvm::Function *fn = currentModule->getFunction(name);
 	if(!fn){
