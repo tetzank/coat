@@ -47,8 +47,6 @@ public:
 	std::unique_ptr<llvm::Module> module{nullptr}; // set in createFunction
 	// all functions in module
 	std::vector<llvm::Function*> functions;
-	// latest function, which is currently generated
-	llvm::Function *jit_func;
 
 private:
 	std::unique_ptr<llvm::TargetMachine> tm;

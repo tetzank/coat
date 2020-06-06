@@ -29,11 +29,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		);
 		jit.reset(); //HACK
 		func = jit.createFunction(jit_func_type, name); // function name
-		//FIXME: so hacky
-		jit.jit_func = func;
 
-		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", jit.jit_func);
-		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", jit.jit_func);
+		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", func);
+		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", func);
 		cc.SetInsertPoint(bb_prolog);
 		cc.CreateBr(bb_start);
 
@@ -49,7 +47,6 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	template<class IFunc>
 	void startNextFunction(const IFunc &internalCall){
-		jit.jit_func = internalCall.func;
 		// start new basic block in internal function
 		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(cc.getContext(), "prolog", internalCall.func);
 		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(cc.getContext(), "start", internalCall.func);
