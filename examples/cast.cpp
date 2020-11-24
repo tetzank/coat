@@ -17,13 +17,13 @@ int main(){
 	// initialize backend, AsmJit in this case
 	coat::runtimeasmjit asmrt;
 	// context object representing the generated function
-	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+	auto fn = asmrt.createFunction<func_t>();
 #elif defined(ENABLE_LLVMJIT)
 	// initialize LLVM backend
 	coat::runtimellvmjit::initTarget();
 	coat::runtimellvmjit llvmrt;
 	// context object representing the generated function
-	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
+	auto fn = llvmrt.createFunction<func_t>();
 #else
 #	error "Neither AsmJit nor LLVM enabled"
 #endif

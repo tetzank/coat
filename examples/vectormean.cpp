@@ -35,7 +35,7 @@ void mean_coat(
 	// init
 	coat::runtimeasmjit asmrt;
 	// context object
-	coat::Function<coat::runtimeasmjit,func_type> fn(asmrt, "gen_asmjit");
+	auto fn = asmrt.createFunction<func_type>("gen_asmjit");
 	fn.enableCodeDump();
 #elif defined(ENABLE_LLVMJIT)
 	// init
@@ -43,7 +43,7 @@ void mean_coat(
 	coat::runtimellvmjit llvmrt;
 	llvmrt.setOptLevel(2);
 	// context object
-	coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt, "gen_llvmjit");
+	auto fn = llvmrt.createFunction<func_type>("gen_llvmjit");
 #else
 #	error "Neither AsmJit nor LLVM enabled"
 #endif

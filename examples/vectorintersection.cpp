@@ -20,7 +20,7 @@ int main(){
 	coat::runtimellvmjit llvmrt;
 	llvmrt.setOptLevel(2);
 	// context object
-	coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt, "intersection_llvmjit");
+	auto fn = llvmrt.createFunction<func_type>("intersection_llvmjit");
 	{ // EDSL
 		// function parameters: 2 source arrays, destination array, size of arrays
 		auto [aptr,bptr,rptr,size] = fn.getArguments("a", "b", "r", "size");

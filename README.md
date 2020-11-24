@@ -40,7 +40,7 @@ int main(){
 	// signature of the generated function
 	using func_t = uint64_t (*)(uint64_t *data, uint64_t size);
 	// context object representing the generated function
-	coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
+	auto fn = asmrt.createFunction<func_t>();
 	// start of the EDSL code describing the code of the generated function
 	{
 		// get function arguments as "meta-variables"
