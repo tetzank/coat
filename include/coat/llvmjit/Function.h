@@ -21,6 +21,22 @@
 
 namespace coat {
 
+//HACK: would love to not need this stuff for addFunction
+template<typename T>
+struct getFunctionType;
+
+template<typename R, typename ...Args>
+struct getFunctionType<R(*)(Args...)>{
+	llvm::FunctionType *operator()(llvm::LLVMContext &context){
+		return llvm::FunctionType::get(
+			getLLVMType<std::remove_cv_t<R>>(context),
+			{(getLLVMType<std::remove_cv_t<Args>>(context))...},
+			false
+		);
+	}
+};
+
+
 template<typename R, typename ...Args>
 struct Function<runtimellvmjit,R(*)(Args...)>{
 	using CC = runtimellvmjit;
@@ -70,15 +86,11 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	}
 
 
-	template<typename R_intern, typename ...Args_intern>
-	InternalFunction<runtimellvmjit,R_intern(*)(Args_intern...)> addFunction(const char *name){
-		llvm::FunctionType *func_type = llvm::FunctionType::get(
-			getLLVMType<std::remove_cv_t<R_intern>>(*context),
-			{(getLLVMType<std::remove_cv_t<Args_intern>>(*context))...},
-			false
-		);
+	template<typename FuncSig>
+	InternalFunction<runtimellvmjit,FuncSig> addFunction(const char *name){
+		llvm::FunctionType *func_type = getFunctionType<FuncSig>{}(*context);
 		llvm::Function *foo = createFunction(func_type, name, llvm::Function::InternalLinkage);
-		return InternalFunction<runtimellvmjit,R_intern(*)(Args_intern...)>(jit, cc, name, foo);
+		return InternalFunction<runtimellvmjit,FuncSig>(jit, cc, name, foo);
 	}
 
 	template<class IFunc>

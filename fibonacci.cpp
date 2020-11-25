@@ -71,16 +71,15 @@ void assemble_allinone(Fn &fn){
 
 
 #ifdef ENABLE_LLVMJIT
-static void verifyAndOptimize(coat::runtimellvmjit &llvmrt, const char *fname1, const char *fname2){
-	llvmrt.print(fname1);
-	if(!llvmrt.verifyFunctions()){
+template<typename F>
+static void verifyAndOptimize(F &function, const char *fname1, const char *fname2){
+	function.printIR(fname1);
+	if(!function.verify()){
 		puts("verification failed. aborting.");
 		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
-	if(llvmrt.getOptLevel() > 0){
-		llvmrt.optimize();
-		llvmrt.print(fname2);
-	}
+	function.optimize(2);
+	function.printIR(fname2);
 }
 #endif
 
@@ -121,7 +120,7 @@ int main(int argc, char *argv[]){
 		// context object representing the generated function
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt);
 		assemble_selfcall(fn);
-		verifyAndOptimize(llvmrt, "selfcall.ll", "selfcall_opt.ll");
+		verifyAndOptimize(fn, "selfcall.ll", "selfcall_opt.ll");
 		// finalize code generation and get function pointer to the generated function
 		func_t foo = fn.finalize();
 		// execute the generated function
@@ -153,7 +152,7 @@ int main(int argc, char *argv[]){
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller");
 		assemble_crosscall(fn, foorec, "rec");
 
-		verifyAndOptimize(llvmrt, "crosscall.ll", "crosscall_opt.ll");
+		verifyAndOptimize(fn, "crosscall.ll", "crosscall_opt.ll");
 
 		func_t foo = fn.finalize();
 		// execute the generated function
@@ -179,7 +178,7 @@ int main(int argc, char *argv[]){
 		coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "caller2");
 		assemble_allinone(fn);
 
-		verifyAndOptimize(llvmrt, "allinone.ll", "allinone_opt.ll");
+		verifyAndOptimize(fn, "allinone.ll", "allinone_opt.ll");
 
 		// finalize code generation and get function pointer to the generated function
 		func_t foo = fn.finalize();

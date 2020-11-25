@@ -1,6 +1,8 @@
 #ifndef COAT_RUNTIMELLVMJIT_H_
 #define COAT_RUNTIMELLVMJIT_H_
 
+#include <utility> // tuple_size, tuple_element
+#include "constexpr_helper.h" // should_not_be_reached
 
 #include <llvm/Support/TargetSelect.h> // InitializeNativeTarget
 
@@ -8,8 +10,6 @@
 #include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
 #include <llvm/ExecutionEngine/JITEventListener.h>
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
-
-#include "constexpr_helper.h"
 
 
 namespace coat {
