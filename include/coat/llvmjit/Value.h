@@ -143,7 +143,7 @@ struct Value<llvm::IRBuilder<>,T> final : public ValueBase<llvm::IRBuilder<>> {
 	Value popcount() const {
 		Value ret(cc);
 		// call intrinsic
-		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ID::ctpop, {load()});
+		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ctpop, {type()}, {load()});
 		pop->setTailCall();
 		ret.store(pop);
 		return ret;

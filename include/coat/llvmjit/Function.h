@@ -3,7 +3,20 @@
 
 #include "../runtimellvmjit.h"
 
-#include <tuple> // apply
+#include <tuple>   // apply
+#include <vector>
+#include <fstream> // ofstream
+#include <cstdio>  // fprintf
+
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/LegacyPassManager.h> // for optimizations
+#include <llvm/IR/Verifier.h>
+
+#include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+
+#include <llvm/Support/raw_ostream.h>
 
 
 namespace coat {
@@ -16,22 +29,31 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	using return_type = R;
 
 	runtimellvmjit &jit;
+	std::unique_ptr<llvm::LLVMContext> context;
+	std::unique_ptr<llvm::Module> M;
 	llvm::IRBuilder<> cc;
 
 	const char *name;
-	llvm::Function *func;
+	llvm::Function *func; //TODO: remove, first in functions
+	// all functions in module, TODO: what about this?
+	std::vector<llvm::Function*> functions;
 
-	Function(runtimellvmjit &jit, const char *name="func") : jit(jit), cc(jit.context), name(name) {
+	Function(runtimellvmjit &jit, const char *name="func")
+		: jit(jit)
+		, context(std::make_unique<llvm::LLVMContext>())
+		, M(std::make_unique<llvm::Module>("test", *context))
+		, cc(*context)
+		, name(name)
+	{
 		llvm::FunctionType *jit_func_type = llvm::FunctionType::get(
-			getLLVMType<std::remove_cv_t<R>>(jit.context),
-			{(getLLVMType<std::remove_cv_t<Args>>(jit.context))...},
+			getLLVMType<std::remove_cv_t<R>>(*context),
+			{(getLLVMType<std::remove_cv_t<Args>>(*context))...},
 			false
 		);
-		jit.reset(); //HACK
-		func = jit.createFunction(jit_func_type, name); // function name
+		func = createFunction(jit_func_type, name); // function name
 
-		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(jit.context, "prolog", func);
-		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(jit.context, "start", func);
+		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(*context, "prolog", func);
+		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(*context, "start", func);
 		cc.SetInsertPoint(bb_prolog);
 		cc.CreateBr(bb_start);
 
@@ -40,9 +62,23 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	Function(const Function &) = delete;
 
 
-	template<typename FuncSig>
-	InternalFunction<runtimellvmjit,FuncSig> addFunction(const char *name){
-		return InternalFunction<runtimellvmjit,FuncSig>(jit, cc, name);
+	//TODO: make private
+	llvm::Function *createFunction(llvm::FunctionType *jit_func_type, const char *name, llvm::GlobalValue::LinkageTypes linkage=llvm::Function::ExternalLinkage){
+		llvm::Function *foo = llvm::Function::Create(jit_func_type, linkage, name, M.get());
+		functions.push_back(foo);
+		return foo;
+	}
+
+
+	template<typename R_intern, typename ...Args_intern>
+	InternalFunction<runtimellvmjit,R_intern(*)(Args_intern...)> addFunction(const char *name){
+		llvm::FunctionType *func_type = llvm::FunctionType::get(
+			getLLVMType<std::remove_cv_t<R_intern>>(*context),
+			{(getLLVMType<std::remove_cv_t<Args_intern>>(*context))...},
+			false
+		);
+		llvm::Function *foo = createFunction(func_type, name, llvm::Function::InternalLinkage);
+		return InternalFunction<runtimellvmjit,R_intern(*)(Args_intern...)>(jit, cc, name, foo);
 	}
 
 	template<class IFunc>
@@ -87,15 +123,80 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	}
 
 	func_type finalize(){
-		func_type fn;
-
-		jit.finalize();
-		fn = (func_type) jit.getSymbolAddress(name);
-		return fn;
+		llvm::orc::ThreadSafeModule tsm(std::move(M), std::move(context));
+		cantFail(jit.J->addIRModule(std::move(tsm)));
+		// Look up the JIT'd function
+		llvm::JITEvaluatedSymbol SumSym = cantFail(jit.J->lookup(name));
+		// get function ptr
+		return (func_type)SumSym.getAddress();
 	}
 
 	operator const llvm::IRBuilder<>&() const { return cc; }
 	operator       llvm::IRBuilder<>&()       { return cc; }
+
+	void optimize(int optLevel){
+		//TODO: use TransformLayer instead
+		llvm::PassManagerBuilder pm_builder;
+		pm_builder.OptLevel = optLevel;
+		pm_builder.SizeLevel = 0;
+		//pm_builder.Inliner = llvm::createAlwaysInlinerLegacyPass();
+		pm_builder.Inliner = llvm::createFunctionInliningPass(optLevel, 0, false);
+		pm_builder.LoopVectorize = true;
+		pm_builder.SLPVectorize = true;
+
+		//pm_builder.VerifyInput = true;
+		pm_builder.VerifyOutput = true;
+
+		llvm::legacy::FunctionPassManager function_pm(M.get());
+		llvm::legacy::PassManager module_pm;
+		pm_builder.populateFunctionPassManager(function_pm);
+		pm_builder.populateModulePassManager(module_pm);
+
+		function_pm.doInitialization();
+		//TODO: multiple functions
+		//for(llvm::Function *f : functions){
+		//	function_pm.run(*f);
+		//}
+		function_pm.run(*func);
+
+		module_pm.run(*M);
+	}
+
+	// print IR to file
+	void printIR(const char *fname){
+		std::string str;
+		llvm::raw_string_ostream os(str);
+		M->print(os, nullptr);
+		std::ofstream of(fname);
+		of << os.str();
+	}
+
+	//TODO: port to LLVM 11
+#if 0
+	void dumpAssembly(const char *filename){
+		std::string str;
+		{
+			llvm::legacy::PassManager pm;
+			llvm::raw_string_ostream os(str);
+			llvm::buffer_ostream pstream(os);
+			tm->Options.MCOptions.AsmVerbose = true; // get some comments linking it to LLVM IR
+			tm->addPassesToEmitFile(pm, pstream, nullptr, llvm::TargetMachine::CGFT_AssemblyFile);
+			pm.run(*module);
+		}
+		std::ofstream of(filename);
+		of << str;
+	}
+#endif
+
+	bool verify(){
+		std::string str;
+		llvm::raw_string_ostream os(str);
+		bool failed = llvm::verifyFunction(*func, &os);
+		if(failed){
+			fprintf(stderr, "\nfunction verifier:\n%s\n", os.str().c_str());
+		}
+		return !failed;
+	}
 };
 
 
@@ -109,14 +210,9 @@ struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
 	const char *name;
 	llvm::Function *func;
 
-	InternalFunction(runtimellvmjit &jit, llvm::IRBuilder<> &cc, const char *name) : cc(cc), name(name) {
-		llvm::FunctionType *func_type = llvm::FunctionType::get(
-			getLLVMType<std::remove_cv_t<R>>(jit.context),
-			{(getLLVMType<std::remove_cv_t<Args>>(jit.context))...},
-			false
-		);
-		func = jit.createFunction(func_type, name, llvm::Function::InternalLinkage); // function name
-	}
+	//TODO: make private, Function::addFunction should be used
+	InternalFunction(runtimellvmjit &jit, llvm::IRBuilder<> &cc, const char *name, llvm::Function *func)
+		: cc(cc), name(name), func(func) {}
 	InternalFunction(const InternalFunction &other) : cc(other.cc), name(other.name), func(other.func) {}
 
 
