@@ -253,23 +253,20 @@ static column_t jit1_llvmjit(const Table &table, const char *operations, coat::r
 
 	auto t_start = std::chrono::high_resolution_clock::now();
 
-	llvmrt.setOptLevel(2);
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
 	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "jit1_llvmjit");
 	assemble_jit1(fn, operations);
 
-	llvmrt.print("jit1.ll");
-	if(!llvmrt.verifyFunctions()){
+	fn.printIR("jit1.ll");
+	if(!fn.verify()){
 		puts("verification failed. aborting.");
 		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
-	if(llvmrt.getOptLevel() > 0){
-		llvmrt.optimize();
-		llvmrt.print("jit1_opt.ll");
-		if(!llvmrt.verifyFunctions()){
-			puts("verification after optimization failed. aborting.");
-			exit(EXIT_FAILURE); //FIXME: better error handling
-		}
+	fn.optimize(2);
+	fn.printIR("jit1_opt.ll");
+	if(!fn.verify()){
+		puts("verification after optimization failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
 	// finalize function
 	func_t fnptr = fn.finalize();
@@ -325,23 +322,20 @@ static column_t jit2_llvmjit(const Table &table, const char *operations, coat::r
 
 	auto t_start = std::chrono::high_resolution_clock::now();
 
-	llvmrt.setOptLevel(2);
 	using func_t = void (*)(const Table *table, uint64_t *result, size_t size);
 	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "jit2_llvmjit");
 	assemble_jit2(fn, operations);
 
-	llvmrt.print("jit2.ll");
-	if(!llvmrt.verifyFunctions()){
+	fn.printIR("jit2.ll");
+	if(!fn.verify()){
 		puts("verification failed. aborting.");
 		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
-	if(llvmrt.getOptLevel() > 0){
-		llvmrt.optimize();
-		llvmrt.print("jit2_opt.ll");
-		if(!llvmrt.verifyFunctions()){
-			puts("verification after optimization failed. aborting.");
-			exit(EXIT_FAILURE); //FIXME: better error handling
-		}
+	fn.optimize(2);
+	fn.printIR("jit2_opt.ll");
+	if(!fn.verify()){
+		puts("verification after optimization failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
 	// finalize function
 	func_t fnptr = fn.finalize();
@@ -397,23 +391,20 @@ static column_t jit3_llvmjit(const Table &table, const char *operations, coat::r
 
 	auto t_start = std::chrono::high_resolution_clock::now();
 
-	llvmrt.setOptLevel(2);
 	using func_t = void (*)(uint64_t *result, size_t size);
 	coat::Function<coat::runtimellvmjit,func_t> fn(llvmrt, "jit3_llvmjit");
 	assemble_jit3(fn, operations, table);
 
-	llvmrt.print("jit3.ll");
-	if(!llvmrt.verifyFunctions()){
+	fn.printIR("jit3.ll");
+	if(!fn.verify()){
 		puts("verification failed. aborting.");
 		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
-	if(llvmrt.getOptLevel() > 0){
-		llvmrt.optimize();
-		llvmrt.print("jit3_opt.ll");
-		if(!llvmrt.verifyFunctions()){
-			puts("verification after optimization failed. aborting.");
-			exit(EXIT_FAILURE); //FIXME: better error handling
-		}
+	fn.optimize(2);
+	fn.printIR("jit3_opt.ll");
+	if(!fn.verify()){
+		puts("verification after optimization failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
 	}
 	// finalize function
 	func_t fnptr = fn.finalize();

@@ -277,7 +277,7 @@ int main(int argc, char **argv){
 		coat::Function<coat::runtimellvmjit,func_type> fn(llvmrt);
 		assemble_getStructElement(fn);
 
-		llvmrt.print("test-triple-dump.ll");
+		fn.printIR("test-triple-dump.ll");
 
 		// finalize function
 		func_type fnptr = fn.finalize();
@@ -379,7 +379,7 @@ int main(int argc, char **argv){
 		coat::ret(fn, vr_size);
 
 
-		llvmrt.print("test-podvec-dump.ll");
+		fn.printIR("test-podvec-dump.ll");
 
 		// finalize function
 		func_type fnptr = fn.finalize();
