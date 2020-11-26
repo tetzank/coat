@@ -135,6 +135,23 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	}
 
 	func_type finalize(){
+		// iterate over all functions in the module
+		for(auto &f : M->functions()){
+			// check if it has a function pointer attached as metadata
+			if(llvm::MDNode *md = f.getMetadata("coat.fnptr")){
+				//FIXME: get rid of llvm::cast
+				llvm::Constant *c = llvm::cast<llvm::ConstantAsMetadata>(md->getOperand(0))->getValue();
+				uint64_t fnptr = llvm::cast<llvm::ConstantInt>(c)->getZExtValue();
+				// add function address as absolute symbol
+				cantFail(jit.J->define(
+					llvm::orc::absoluteSymbols({{
+						jit.J->mangleAndIntern(f.getName()),
+						llvm::JITEvaluatedSymbol::fromPointer((void*)fnptr)
+					}})
+				));
+			}
+		}
+
 		llvm::orc::ThreadSafeModule tsm(std::move(M), std::move(context));
 		cantFail(jit.J->addIRModule(std::move(tsm)));
 		// Look up the JIT'd function

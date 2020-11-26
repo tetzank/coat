@@ -188,18 +188,10 @@ void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
 
 
 // calling function outside of generated code
-template<typename FnPtr, typename R, typename ...Args>
+template<typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(Function<runtimellvmjit,FnPtr> &ctx, R(*fnptr)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
-	// adds address of funtion pointer to absolute symbols
-	cantFail(ctx.jit.J->define(
-		llvm::orc::absoluteSymbols({{
-			ctx.jit.J->mangleAndIntern(name),
-			llvm::JITEvaluatedSymbol::fromPointer(fnptr)
-		}})
-	));
-
-	llvm::Module *currentModule = ctx.cc.GetInsertBlock()->getModule();
+FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
+	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
 	llvm::Function *fn = currentModule->getFunction(name);
 	if(!fn){
 		// first call to external function
@@ -212,13 +204,22 @@ FunctionCall(Function<runtimellvmjit,FnPtr> &ctx, R(*fnptr)(Args...), const char
 		// add function to module
 		fn = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, name, currentModule);
 		fn->setCallingConv(llvm::CallingConv::C);
+
+		// adds address of funtion pointer to metadata
+		// in Function::finalize it is added as absolute symbols
+		llvm::MDNode *md = llvm::MDNode::get(ctx,
+			llvm::ConstantAsMetadata::get(
+				llvm::ConstantInt::get(llvm::Type::getInt64Ty(ctx), (uint64_t)fnptr)
+			)
+		);
+		fn->setMetadata("coat.fnptr", md);
 	}
 	// call
-	llvm::CallInst *call_inst = ctx.cc.CreateCall(fn, { arguments.load()... });
+	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments.load()... });
 
 	if constexpr(!std::is_void_v<R>){
 		// return value
-		reg_type<::llvm::IRBuilder<>,R> ret(ctx.cc, "callreturn");
+		reg_type<::llvm::IRBuilder<>,R> ret(cc, "callreturn");
 		ret = call_inst;
 		return ret;
 	}
