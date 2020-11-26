@@ -41,6 +41,13 @@ int main(){
 		// specify return value
 		coat::ret(fn, ret);
 	}
+#ifdef ENABLE_LLVMJIT
+	fn.printIR("call.ll");
+	if(!fn.verify()){
+		puts("verification failed. aborting.");
+		exit(EXIT_FAILURE); //FIXME: better error handling
+	}
+#endif
 	// finalize code generation and get function pointer to the generated function
 	func_t foo = fn.finalize();
 

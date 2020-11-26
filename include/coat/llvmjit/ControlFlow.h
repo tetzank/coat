@@ -188,15 +188,18 @@ void for_each(llvm::IRBuilder<> &cc, const T &container, Fn &&body){
 
 
 // calling function outside of generated code
-template<typename R, typename ...Args>
+template<typename FnPtr, typename R, typename ...Args>
 std::conditional_t<std::is_void_v<R>, void, reg_type<::llvm::IRBuilder<>,R>>
-FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
-	// adds address of funtion pointer to a list of explicit symbols
-	// which is search first during symbol lookup
-	// overwrites the same entry when called multiple times
-	llvm::sys::DynamicLibrary::AddSymbol(name, (void*)fnptr);
+FunctionCall(Function<runtimellvmjit,FnPtr> &ctx, R(*fnptr)(Args...), const char *name, const wrapper_type<::llvm::IRBuilder<>,Args>&... arguments){
+	// adds address of funtion pointer to absolute symbols
+	cantFail(ctx.jit.J->define(
+		llvm::orc::absoluteSymbols({{
+			ctx.jit.J->mangleAndIntern(name),
+			llvm::JITEvaluatedSymbol::fromPointer(fnptr)
+		}})
+	));
 
-	llvm::Module *currentModule = cc.GetInsertBlock()->getModule();
+	llvm::Module *currentModule = ctx.cc.GetInsertBlock()->getModule();
 	llvm::Function *fn = currentModule->getFunction(name);
 	if(!fn){
 		// first call to external function
@@ -211,11 +214,11 @@ FunctionCall(llvm::IRBuilder<> &cc, R(*fnptr)(Args...), const char *name, const 
 		fn->setCallingConv(llvm::CallingConv::C);
 	}
 	// call
-	llvm::CallInst *call_inst = cc.CreateCall(fn, { arguments.load()... });
+	llvm::CallInst *call_inst = ctx.cc.CreateCall(fn, { arguments.load()... });
 
 	if constexpr(!std::is_void_v<R>){
 		// return value
-		reg_type<::llvm::IRBuilder<>,R> ret(cc, "callreturn");
+		reg_type<::llvm::IRBuilder<>,R> ret(ctx.cc, "callreturn");
 		ret = call_inst;
 		return ret;
 	}
