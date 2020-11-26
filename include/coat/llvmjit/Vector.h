@@ -46,7 +46,7 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 			case 4: element_type = llvm::Type::getInt32Ty(cc.getContext()); break;
 			case 8: element_type = llvm::Type::getInt64Ty(cc.getContext()); break;
 		}
-		memreg = allocateStackVariable(cc, llvm::VectorType::get(element_type, width), name);
+		memreg = allocateStackVariable(cc, llvm::FixedVectorType::get(element_type, width), name);
 	}
 
 	// copy ctor
@@ -75,9 +75,13 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	//TODO: storing to reference is unintuitive, change to pointer
 	void compressstore(Ref<F,Value<F,T>> &&dest, const VectorMask<F,width> &mask) const {
 		// call intrinsic
-		//FIXME: fallback (no AVX512) fails in LLVM 7 (LLVM error), seems to be fixed since LLVM 9, need to upgrade
-		//TODO: the generic fallback is not efficient anyway, roll our own
-		llvm::CallInst *pop = cc.CreateIntrinsic(llvm::Intrinsic::ID::masked_compressstore, {load(), dest.mem, mask.load()});
+		// fallback to generic code when no AVX512
+		//TODO: the generic fallback is not efficient, roll our own
+		llvm::CallInst *pop = cc.CreateIntrinsic(
+			llvm::Intrinsic::masked_compressstore,
+			type(),
+			{load(), dest.mem, mask.load()}
+		);
 		pop->setTailCall();
 	}
 
@@ -89,9 +93,10 @@ struct Vector<::llvm::IRBuilder<>,T,width> final {
 	Vector &operator-=(const Ref<F,Value<F,T>> &other){ store( cc.CreateSub(load(), refload(other)) ); return *this; }
 
 	Vector &operator/=(int amount){
+		llvm::VectorType *vt = (llvm::VectorType*)type();
 		llvm::Constant *splat = llvm::ConstantVector::getSplat(
-			width,
-			llvm::ConstantInt::get( ((llvm::VectorType*)type())->getElementType(), amount )
+			vt->getElementCount(),
+			llvm::ConstantInt::get( vt->getElementType(), amount )
 		);
 		if constexpr(std::is_signed_v<T>){
 			store( cc.CreateSDiv(load(), splat) );
@@ -153,7 +158,7 @@ template<typename T, unsigned width>
 Vector<llvm::IRBuilder<>,T,width> shuffle(
 	llvm::IRBuilder<> &cc,
 	const Vector<llvm::IRBuilder<>,T,width> &vec,
-	std::array<unsigned,width> &&indexes
+	std::array<int,width> &&indexes
 ){
 	Vector<llvm::IRBuilder<>,T,width> res(cc);
 	llvm::Value *shuffled = cc.CreateShuffleVector(vec.load(), llvm::UndefValue::get(vec.type()), indexes);

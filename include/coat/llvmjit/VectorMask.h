@@ -18,14 +18,15 @@ struct VectorMask<::llvm::IRBuilder<>,width> final {
 	unsigned getWidth() const { return width; }
 
 	VectorMask(F &cc, const char *name="") : cc(cc) {
-		memreg = allocateStackVariable(cc, llvm::VectorType::get(llvm::Type::getInt1Ty(cc.getContext()), width), name);
+		memreg = allocateStackVariable(cc, llvm::FixedVectorType::get(llvm::Type::getInt1Ty(cc.getContext()), width), name);
 	}
 
 	Value<F,uint64_t> movemask() const {
 		Value<F,uint64_t> result(cc);
+		llvm::VectorType *vt = (llvm::VectorType*)type();
 		llvm::Constant *zeroinitializer = llvm::ConstantVector::getSplat(
-			width,
-			llvm::ConstantInt::get( ((llvm::VectorType*)type())->getElementType(), 0 )
+			vt->getElementCount(),
+			llvm::ConstantInt::get( vt->getElementType(), 0 )
 		);
 		llvm::Value *cmp = cc.CreateICmpSLT(load(), zeroinitializer);
 		llvm::Value *cast = cc.CreateBitCast(cmp, llvm::IntegerType::get(cc.getContext(), width));
