@@ -338,6 +338,16 @@ The generated function should appear with the chosen name in the list of functio
 You can zoom into the function and annotate the instructions with profile information by pressing 'a'.
 
 
+## Publications
+
+Paper:<br>
+Tetzel, F., Lehner, W. & Kasperovics, R. Efficient Compilation of Regular Path Queries. _Datenbank Spektrum_ 20, 243–259 (2020). https://doi.org/10.1007/s13222-020-00353-9
+
+Blog posts:<br>
+[COAT: EDSL for Codegen](https://tetzank.github.io/posts/coat-edsl-for-codegen/)<br>
+[Codegen in Databases](https://tetzank.github.io/posts/codegen-in-databases/)
+
+
 ## Similar Projects
 
 [CodeGen](https://github.com/pdziepak/codegen) - similar wrapper library on top of LLVM
