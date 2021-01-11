@@ -157,7 +157,7 @@ int main(int argc, char **argv){
 		using func_type = int (*)();
 		auto fn = llvmrt.createFunction<func_type>("value_creation");
 		// calling coat::Value ctor
-		coat::Value<::llvm::IRBuilder<>,int> vr_val(fn, "val");
+		coat::Value<coat::LLVMBuilders,int> vr_val(fn, "val");
 		vr_val = 0;
 		// calling factory to get coat::Value of certain type
 		auto vr_val2 = fn.getValue<int>("val");

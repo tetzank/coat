@@ -18,6 +18,9 @@
 
 #include <llvm/Support/raw_ostream.h>
 
+#include "DebugOperand.h"
+#include <llvm/IR/DIBuilder.h>
+
 
 namespace coat {
 
@@ -37,53 +40,96 @@ struct getFunctionType<R(*)(Args...)>{
 };
 
 
+struct LLVMBuilders {
+	llvm::IRBuilder<> ir;
+	llvm::DIBuilder dbg;
+	llvm::DIScope *debugScope;
+
+	LLVMBuilders(llvm::LLVMContext &ctx, llvm::Module &M) : ir(ctx), dbg(M) {}
+};
+
 template<typename R, typename ...Args>
 struct Function<runtimellvmjit,R(*)(Args...)>{
 	using CC = runtimellvmjit;
-	using F = ::llvm::IRBuilder<>;
+	using F = LLVMBuilders;
 	using func_type = R (*)(Args...);
 	using return_type = R;
 
 	runtimellvmjit &jit;
 	std::unique_ptr<llvm::LLVMContext> context;
 	std::unique_ptr<llvm::Module> M;
-	llvm::IRBuilder<> cc;
+	LLVMBuilders cc;
 
 	const char *name;
 	llvm::Function *func; //TODO: remove, first in functions
 	// all functions in module, TODO: what about this?
 	std::vector<llvm::Function*> functions;
 
-	Function(runtimellvmjit &jit, const char *name="func")
+	Function(
+		runtimellvmjit &jit, const char *name="func",
+		// for debug info
+		const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+	)
 		: jit(jit)
 		, context(std::make_unique<llvm::LLVMContext>())
 		, M(std::make_unique<llvm::Module>("test", *context))
-		, cc(*context)
+		, cc(*context, *M)
 		, name(name)
 	{
+#if 0
+		// source file where function was created
+		// a bit pointless as the code generating a function may be spread across multiple source files
+		llvm::DIFile *difile = cc.dbg.createFile(
+			srcfile, "." //TODO: how to get directory?
+		);
+		//TODO: change bool when optimization is enabled
+		llvm::DICompileUnit *dicu = cc.dbg.createCompileUnit(llvm::dwarf::DW_LANG_C, difile, "COAT", false, "", 0);
+#endif
+
+		// LLVM IR function type
 		llvm::FunctionType *jit_func_type = llvm::FunctionType::get(
 			getLLVMType<std::remove_cv_t<R>>(*context),
 			{(getLLVMType<std::remove_cv_t<Args>>(*context))...},
 			false
 		);
+		// LLVM IR function definition
 		func = createFunction(jit_func_type, name); // function name
+
+#if 0
+		// function type in debug info
+		llvm::DISubroutineType *dbg_func_type = cc.dbg.createSubroutineType(
+			cc.dbg.getOrCreateTypeArray({
+				getDebugType<std::remove_cv_t<R>>(cc.dbg),
+				getDebugType<std::remove_cv_t<Args>>(cc.dbg)...
+			})
+		);
+		// debug definition of function
+		llvm::DISubprogram *disubprogram = cc.dbg.createFunction(
+			difile /*scope*/,
+			name, name /*linker name, mangled?*/,
+			difile, srcline,
+			dbg_func_type,
+			srcline /*scope line ???*/,
+			llvm::DINode::DIFlags::FlagPrototyped,
+			llvm::DISubprogram::SPFlagDefinition
+		);
+		func->setSubprogram(disubprogram);
+		cc.debugScope = disubprogram;
+#endif
 
 		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(*context, "prolog", func);
 		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(*context, "start", func);
-		cc.SetInsertPoint(bb_prolog);
-		cc.CreateBr(bb_start);
+		cc.ir.SetInsertPoint(bb_prolog);
+		cc.ir.CreateBr(bb_start);
 
-		cc.SetInsertPoint(bb_start);
+		cc.ir.SetInsertPoint(bb_start);
+
+#if 0
+		// unset location for prologue
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc());
+#endif
 	}
 	Function(const Function &) = delete;
-
-
-	//TODO: make private
-	llvm::Function *createFunction(llvm::FunctionType *jit_func_type, const char *name, llvm::GlobalValue::LinkageTypes linkage=llvm::Function::ExternalLinkage){
-		llvm::Function *foo = llvm::Function::Create(jit_func_type, linkage, name, M.get());
-		functions.push_back(foo);
-		return foo;
-	}
 
 
 	template<typename FuncSig>
@@ -96,12 +142,12 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	template<class IFunc>
 	void startNextFunction(const IFunc &internalCall){
 		// start new basic block in internal function
-		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(cc.getContext(), "prolog", internalCall.func);
-		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(cc.getContext(), "start", internalCall.func);
+		llvm::BasicBlock *bb_prolog = llvm::BasicBlock::Create(*context, "prolog", internalCall.func);
+		llvm::BasicBlock *bb_start = llvm::BasicBlock::Create(*context, "start", internalCall.func);
 		// start inserting here
-		cc.SetInsertPoint(bb_prolog);
-		cc.CreateBr(bb_start);
-		cc.SetInsertPoint(bb_start);
+		cc.ir.SetInsertPoint(bb_prolog);
+		cc.ir.CreateBr(bb_start);
+		cc.ir.SetInsertPoint(bb_start);
 	}
 
 
@@ -110,11 +156,26 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
 		// create all parameter wrapper objects in a tuple
 		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names)... };
+
+#if 0
+		// debug information
+		// HACK: hardcoded, move to Value ctor
+		llvm::DILocalVariable *di_data = cc.dbg.createParameterVariable(cc.debugScope, "data", 0, cc.debugScope->getFile(), 35, getDebugType<uint64_t*>(cc.dbg), true);
+		cc.dbg.insertDeclare(std::get<0>(ret).memreg, di_data, cc.dbg.createExpression(), llvm::DebugLoc::get(35, 0, cc.debugScope), cc.ir.GetInsertBlock());
+
+		llvm::DILocalVariable *di_size = cc.dbg.createParameterVariable(cc.debugScope, "size", 0, cc.debugScope->getFile(), 35, getDebugType<uint64_t>(cc.dbg), true);
+		cc.dbg.insertDeclare(std::get<1>(ret).memreg, di_data, cc.dbg.createExpression(), llvm::DebugLoc::get(35, 0, cc.debugScope), cc.ir.GetInsertBlock());
+#endif
+
 		// get argument value and put it in wrapper object
 		std::apply(
 			[&](auto &&...args){
-				llvm::Function *fn = cc.GetInsertBlock()->getParent();
+				llvm::Function *fn = cc.ir.GetInsertBlock()->getParent();
 				llvm::Function::arg_iterator arguments = fn->arg_begin();
+#if 0
+				//HACK: debug information, move to operator=()
+				cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(35, 0, cc.debugScope));
+#endif
 				// (tuple_at_0 = (llvm::Value*)args++), (tuple_at_1 = (llvm::Value*)args++), ... ;
 				((args = (llvm::Value*)arguments++), ...);
 			},
@@ -135,20 +196,27 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	}
 
 	func_type finalize(){
+		// finalize debug information
+		cc.dbg.finalize();
+
 		// iterate over all functions in the module
 		for(auto &f : M->functions()){
 			// check if it has a function pointer attached as metadata
 			if(llvm::MDNode *md = f.getMetadata("coat.fnptr")){
-				//FIXME: get rid of llvm::cast
-				llvm::Constant *c = llvm::cast<llvm::ConstantAsMetadata>(md->getOperand(0))->getValue();
-				uint64_t fnptr = llvm::cast<llvm::ConstantInt>(c)->getZExtValue();
-				// add function address as absolute symbol
-				cantFail(jit.J->define(
-					llvm::orc::absoluteSymbols({{
-						jit.J->mangleAndIntern(f.getName()),
-						llvm::JITEvaluatedSymbol::fromPointer((void*)fnptr)
-					}})
-				));
+				// avoid defining a symbol twice by looking first
+				bool found = jit.J->lookup(f.getName());
+				if(!found){
+					//FIXME: get rid of llvm::cast
+					llvm::Constant *c = llvm::cast<llvm::ConstantAsMetadata>(md->getOperand(0))->getValue();
+					uint64_t fnptr = llvm::cast<llvm::ConstantInt>(c)->getZExtValue();
+					// add function address as absolute symbol
+					cantFail(jit.J->define(
+						llvm::orc::absoluteSymbols({{
+							jit.J->mangleAndIntern(f.getName()),
+							llvm::JITEvaluatedSymbol::fromPointer((void*)fnptr)
+						}})
+					));
+				}
 			}
 		}
 
@@ -160,8 +228,10 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		return (func_type)SumSym.getAddress();
 	}
 
-	operator const llvm::IRBuilder<>&() const { return cc; }
-	operator       llvm::IRBuilder<>&()       { return cc; }
+	operator const llvm::IRBuilder<>&() const { return cc.ir; }
+	operator       llvm::IRBuilder<>&()       { return cc.ir; }
+	operator const LLVMBuilders&() const { return cc; }
+	operator       LLVMBuilders&()       { return cc; }
 
 	void optimize(int optLevel){
 		//TODO: use TransformLayer instead
@@ -226,23 +296,32 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		}
 		return !failed;
 	}
+
+private:
+	// create function in LLVM and add to functions vector
+	llvm::Function *createFunction(llvm::FunctionType *jit_func_type, const char *name, llvm::GlobalValue::LinkageTypes linkage=llvm::Function::ExternalLinkage){
+		llvm::Function *foo = llvm::Function::Create(jit_func_type, linkage, name, M.get());
+		functions.push_back(foo);
+		return foo;
+	}
 };
 
 
 template<typename R, typename ...Args>
 struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
-	using F = ::llvm::IRBuilder<>;
+	using F = LLVMBuilders;
 	using func_type = R (*)(Args...);
 	using return_type = R;
 
-	llvm::IRBuilder<> &cc;
+	LLVMBuilders &cc;
 	const char *name;
 	llvm::Function *func;
 
 	//TODO: make private, Function::addFunction should be used
-	InternalFunction(runtimellvmjit &jit, llvm::IRBuilder<> &cc, const char *name, llvm::Function *func)
+	InternalFunction(runtimellvmjit &jit, LLVMBuilders &cc, const char *name, llvm::Function *func)
 		: cc(cc), name(name), func(func) {}
-	InternalFunction(const InternalFunction &other) : cc(other.cc), name(other.name), func(other.func) {}
+	InternalFunction(const InternalFunction &other)
+		: cc(other.cc), name(other.name), func(other.func) {}
 
 
 	template<typename ...Names>
@@ -253,7 +332,7 @@ struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
 		// get argument value and put it in wrapper object
 		std::apply(
 			[&](auto &&...args){
-				llvm::Function *fn = cc.GetInsertBlock()->getParent();
+				llvm::Function *fn = cc.ir.GetInsertBlock()->getParent();
 				llvm::Function::arg_iterator arguments = fn->arg_begin();
 				// (tuple_at_0 = (llvm::Value*)args++), (tuple_at_1 = (llvm::Value*)args++), ... ;
 				((args = (llvm::Value*)arguments++), ...);
@@ -263,8 +342,10 @@ struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
 		return ret;
 	}
 
-	operator const llvm::IRBuilder<>&() const { return cc; }
-	operator       llvm::IRBuilder<>&()       { return cc; }
+	operator const llvm::IRBuilder<>&() const { return cc.ir; }
+	operator       llvm::IRBuilder<>&()       { return cc.ir; }
+	operator const LLVMBuilders&() const { return cc; }
+	operator       LLVMBuilders&()       { return cc; }
 };
 
 

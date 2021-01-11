@@ -127,8 +127,12 @@ public:
 	}
 
 	template<typename FnPtr>
-	Function<runtimellvmjit,FnPtr> createFunction(const char *funcName="func"){
-		return Function<runtimellvmjit,FnPtr>(*this, funcName);
+	Function<runtimellvmjit,FnPtr> createFunction(
+		const char *funcName="func",
+		// for debug info
+		const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+	){
+		return Function<runtimellvmjit,FnPtr>(*this, funcName, srcfile, srcline);
 	}
 };
 

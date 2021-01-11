@@ -5,21 +5,21 @@
 namespace coat {
 
 template<>
-struct Label<llvm::IRBuilder<>> final {
-	using F = ::llvm::IRBuilder<>;
+struct Label<LLVMBuilders> final {
+	using F = LLVMBuilders;
 
-	llvm::IRBuilder<> &cc;
+	LLVMBuilders &cc;
 	llvm::BasicBlock *bb_label;
 
-	Label(llvm::IRBuilder<> &cc) : cc(cc) {
-		bb_label = llvm::BasicBlock::Create(cc.getContext(), "label", cc.GetInsertBlock()->getParent());
+	Label(LLVMBuilders &cc) : cc(cc) {
+		bb_label = llvm::BasicBlock::Create(cc.ir.getContext(), "label", cc.ir.GetInsertBlock()->getParent());
 	}
 
 	void bind() {
 		// implicit fallthrough, branch from current bb to label
-		cc.CreateBr(bb_label);
+		cc.ir.CreateBr(bb_label);
 
-		cc.SetInsertPoint(bb_label);
+		cc.ir.SetInsertPoint(bb_label);
 	}
 
 	operator const llvm::BasicBlock*() const { return bb_label; }
@@ -27,7 +27,7 @@ struct Label<llvm::IRBuilder<>> final {
 };
 
 // deduction guides
-template<typename FnPtr> Label(Function<runtimellvmjit,FnPtr>&) -> Label<llvm::IRBuilder<>>;
+template<typename FnPtr> Label(Function<runtimellvmjit,FnPtr>&) -> Label<LLVMBuilders>;
 
 } // namespace
 

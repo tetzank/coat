@@ -5,20 +5,20 @@
 namespace coat {
 
 template<unsigned width>
-struct VectorMask<::llvm::IRBuilder<>,width> final {
-	using F = ::llvm::IRBuilder<>;
+struct VectorMask<LLVMBuilders,width> final {
+	using F = LLVMBuilders;
 
 	F &cc;
 	llvm::Value *memreg;
 
-	llvm::Value *load() const { return cc.CreateLoad(memreg, "load"); }
-	void store(llvm::Value *v) { cc.CreateStore(v, memreg); }
+	llvm::Value *load() const { return cc.ir.CreateLoad(memreg, "load"); }
+	void store(llvm::Value *v) { cc.ir.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
 	unsigned getWidth() const { return width; }
 
 	VectorMask(F &cc, const char *name="") : cc(cc) {
-		memreg = allocateStackVariable(cc, llvm::FixedVectorType::get(llvm::Type::getInt1Ty(cc.getContext()), width), name);
+		memreg = allocateStackVariable(cc.ir, llvm::FixedVectorType::get(llvm::Type::getInt1Ty(cc.ir.getContext()), width), name);
 	}
 
 	Value<F,uint64_t> movemask() const {
@@ -28,15 +28,15 @@ struct VectorMask<::llvm::IRBuilder<>,width> final {
 			vt->getElementCount(),
 			llvm::ConstantInt::get( vt->getElementType(), 0 )
 		);
-		llvm::Value *cmp = cc.CreateICmpSLT(load(), zeroinitializer);
-		llvm::Value *cast = cc.CreateBitCast(cmp, llvm::IntegerType::get(cc.getContext(), width));
-		result.store( cc.CreateZExt(cast, result.type()) );
+		llvm::Value *cmp = cc.ir.CreateICmpSLT(load(), zeroinitializer);
+		llvm::Value *cast = cc.ir.CreateBitCast(cmp, llvm::IntegerType::get(cc.ir.getContext(), width));
+		result.store( cc.ir.CreateZExt(cast, result.type()) );
 		return result;
 	}
 
-	VectorMask &operator&=(const VectorMask &other){ store( cc.CreateAnd(load(), other.load()) ); return *this; }
-	VectorMask &operator|=(const VectorMask &other){ store( cc.CreateOr (load(), other.load()) ); return *this; }
-	VectorMask &operator^=(const VectorMask &other){ store( cc.CreateXor(load(), other.load()) ); return *this; }
+	VectorMask &operator&=(const VectorMask &other){ store( cc.ir.CreateAnd(load(), other.load()) ); return *this; }
+	VectorMask &operator|=(const VectorMask &other){ store( cc.ir.CreateOr (load(), other.load()) ); return *this; }
+	VectorMask &operator^=(const VectorMask &other){ store( cc.ir.CreateXor(load(), other.load()) ); return *this; }
 };
 
 } // namespace

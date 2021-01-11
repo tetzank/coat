@@ -7,26 +7,26 @@
 namespace coat {
 
 template<class T>
-struct Ref<::llvm::IRBuilder<>,T> {
-	using F = ::llvm::IRBuilder<>;
+struct Ref<LLVMBuilders,T> {
+	using F = LLVMBuilders;
 	using inner_type = T;
 
-	llvm::IRBuilder<> &cc;
+	LLVMBuilders &cc;
 	llvm::Value *mem;
 
-	llvm::Value *load() const { return cc.CreateLoad(mem, "memload"); }
-	//void store(llvm::Value *v) { cc.CreateStore(v, mem); }
+	llvm::Value *load() const { return cc.ir.CreateLoad(mem, "memload"); }
+	//void store(llvm::Value *v) { cc.ir.CreateStore(v, mem); }
 	llvm::Type *type() const { return ((llvm::PointerType*)mem->getType())->getElementType(); }
 
 
-	Ref(llvm::IRBuilder<> &cc, llvm::Value *mem) : cc(cc), mem(mem) {}
+	Ref(LLVMBuilders &cc, llvm::Value *mem) : cc(cc), mem(mem) {}
 
 	Ref &operator=(const T &other){
-		cc.CreateStore(other.load(), mem);
+		cc.ir.CreateStore(other.load(), mem);
 		return *this;
 	}
 	Ref &operator=(typename inner_type::value_type value){
-		cc.CreateStore(llvm::ConstantInt::get(type(), value), mem);
+		cc.ir.CreateStore(llvm::ConstantInt::get(type(), value), mem);
 		return *this;
 	}
 
