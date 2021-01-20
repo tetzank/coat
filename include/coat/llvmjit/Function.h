@@ -76,7 +76,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		, cc(*context, *M)
 		, name(name)
 	{
-#if 0
+#ifdef PROFILING_SOURCE
 		// source file where function was created
 		// a bit pointless as the code generating a function may be spread across multiple source files
 		llvm::DIFile *difile = cc.dbg.createFile(
@@ -95,7 +95,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		// LLVM IR function definition
 		func = createFunction(jit_func_type, name); // function name
 
-#if 0
+#ifdef PROFILING_SOURCE
 		// function type in debug info
 		llvm::DISubroutineType *dbg_func_type = cc.dbg.createSubroutineType(
 			cc.dbg.getOrCreateTypeArray({
@@ -124,7 +124,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 		cc.ir.SetInsertPoint(bb_start);
 
-#if 0
+#ifdef PROFILING_SOURCE
 		// unset location for prologue
 		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc());
 #endif
@@ -152,36 +152,26 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 
 	template<typename ...Names>
-	std::tuple<wrapper_type<F,Args>...> getArguments(Names... names) {
+	std::tuple<wrapper_type<F,Args>...> getArguments_impl(Names... names, const char *file, int line) {
 		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
 		// create all parameter wrapper objects in a tuple
-		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names)... };
-
-#if 0
-		// debug information
-		// HACK: hardcoded, move to Value ctor
-		llvm::DILocalVariable *di_data = cc.dbg.createParameterVariable(cc.debugScope, "data", 0, cc.debugScope->getFile(), 35, getDebugType<uint64_t*>(cc.dbg), true);
-		cc.dbg.insertDeclare(std::get<0>(ret).memreg, di_data, cc.dbg.createExpression(), llvm::DebugLoc::get(35, 0, cc.debugScope), cc.ir.GetInsertBlock());
-
-		llvm::DILocalVariable *di_size = cc.dbg.createParameterVariable(cc.debugScope, "size", 0, cc.debugScope->getFile(), 35, getDebugType<uint64_t>(cc.dbg), true);
-		cc.dbg.insertDeclare(std::get<1>(ret).memreg, di_data, cc.dbg.createExpression(), llvm::DebugLoc::get(35, 0, cc.debugScope), cc.ir.GetInsertBlock());
-#endif
+		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names, true, file, line)... };
 
 		// get argument value and put it in wrapper object
 		std::apply(
 			[&](auto &&...args){
 				llvm::Function *fn = cc.ir.GetInsertBlock()->getParent();
 				llvm::Function::arg_iterator arguments = fn->arg_begin();
-#if 0
-				//HACK: debug information, move to operator=()
-				cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(35, 0, cc.debugScope));
-#endif
 				// (tuple_at_0 = (llvm::Value*)args++), (tuple_at_1 = (llvm::Value*)args++), ... ;
-				((args = (llvm::Value*)arguments++), ...);
+				((args = D2<llvm::Value*>{(llvm::Value*)arguments++, file, line}), ...);
 			},
 			ret
 		);
 		return ret;
+	}
+	template<typename ...Names>
+	std::tuple<wrapper_type<F,Args>...> getArguments(D2<const char*> first, Names... rest) {
+		return getArguments_impl<const char*, Names...>(first.operand, rest..., first.file, first.line);
 	}
 
 	//HACK: trying factory

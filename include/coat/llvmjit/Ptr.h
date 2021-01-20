@@ -23,7 +23,7 @@ struct Ptr<LLVMBuilders,T> {
 	void store(llvm::Value *v) { cc.ir.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
-	Ptr(F &cc, const char *name="") : cc(cc) {
+	Ptr(F &cc, const char *name="", bool isParameter=false, const char *file=__builtin_FILE(), int line=__builtin_LINE()) : cc(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(value_type)){
 			case 1: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt8PtrTy (cc.ir.getContext()), name); break;
@@ -31,6 +31,16 @@ struct Ptr<LLVMBuilders,T> {
 			case 4: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt32PtrTy(cc.ir.getContext()), name); break;
 			case 8: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt64PtrTy(cc.ir.getContext()), name); break;
 		}
+		// debug information
+		llvm::DILocalVariable *di_var;
+		//TODO: file?
+		if(isParameter){
+			//TODO: param number
+			di_var = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg), true); //TODO: why alwaysPreserve=true?
+		}else{
+			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg));
+		}
+		cc.dbg.insertDeclare(memreg, di_var, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock());
 	}
 	Ptr(F &cc, value_type *val, const char *name="") : Ptr(cc, name) {
 		*this = val;
@@ -46,7 +56,11 @@ struct Ptr<LLVMBuilders,T> {
 	Ptr(const Ptr &&other) : cc(other.cc), memreg(other.memreg) {}
 
 	//FIXME: takes any type
-	Ptr &operator=(llvm::Value *val){ store( val ); return *this; }
+	Ptr &operator=(D2<llvm::Value*> val){
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(val.line, 0, cc.debugScope));
+		store( val.operand );
+		return *this;
+	}
 
 	Ptr &operator=(value_type *value){
 		llvm::Constant *int_val = llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), (uint64_t)value);
@@ -68,14 +82,16 @@ struct Ptr<LLVMBuilders,T> {
 		return { cc, cc.ir.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), idx)) };
 	}
 	
-	Ptr operator+(const value_base_type &value) const {
-		Ptr res(cc);
-		res.store( cc.ir.CreateGEP(load(), value.load()) );
+	Ptr operator+(const D2<value_base_type> &value) const {
+		Ptr res(cc, "", false, value.file, value.line);
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(value.line, 0, cc.debugScope));
+		res.store( cc.ir.CreateGEP(load(), value.operand.load()) );
 		return res;
 	}
-	Ptr operator+(size_t value) const {
-		Ptr res(cc);
-		res.store( cc.ir.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), value)) );
+	Ptr operator+(D2<size_t> value) const {
+		Ptr res(cc, "", false, value.file, value.line);
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(value.line, 0, cc.debugScope));
+		res.store( cc.ir.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), value.operand)) );
 		return res;
 	}
 

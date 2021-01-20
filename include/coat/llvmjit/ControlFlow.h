@@ -141,13 +141,14 @@ void do_while(LLVMBuilders &cc, Fn &&body, Condition<LLVMBuilders> cond){
 	cc.ir.SetInsertPoint(bb_afterloop);
 }
 
-template<class Ptr, typename Fn>
-void for_each(LLVMBuilders &cc, Ptr &begin, const Ptr &end, Fn &&body){
+template<class Ptr, typename Body>
+void for_each(LLVMBuilders &cc, Ptr &begin, const Ptr &end, Body &&body, const char *file=__builtin_FILE(), int line=__builtin_LINE()){
 	llvm::BasicBlock *bb_current = cc.ir.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
 	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.ir.getContext(), "foreach", fn);
 	llvm::BasicBlock *bb_after = llvm::BasicBlock::Create(cc.ir.getContext(), "after", fn);
 
+	cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(line, 0, cc.debugScope));
 	// check if even one iteration
 	jump(cc, begin == end, bb_after, bb_loop);
 
