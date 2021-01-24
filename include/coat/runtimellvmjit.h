@@ -114,16 +114,20 @@ public:
 					ObjLinkingLayer->registerJITEventListener(
 						*llvm::JITEventListener::createGDBRegistrationListener()
 					);
-					llvm::JITEventListener *perfListener = llvm::JITEventListener::createPerfJITEventListener();
-					// is nullptr without LLVM_USE_PERF when compiling LLVM
-					assert(perfListener);
-					ObjLinkingLayer->registerJITEventListener(*perfListener);
+					if(const char *jitdump=getenv("COAT_JITDUMP"); jitdump && jitdump[0]=='1'){
+						llvm::JITEventListener *perfListener = llvm::JITEventListener::createPerfJITEventListener();
+						// is nullptr without LLVM_USE_PERF when compiling LLVM
+						assert(perfListener);
+						ObjLinkingLayer->registerJITEventListener(*perfListener);
+					}
 					return ObjLinkingLayer;
 				})
 				.create()
 		);
-		// dumps object files to current working directory (directory can be changed by parameter)
-		J->getObjTransformLayer().setTransform(llvm::orc::DumpObjects());
+		if(const char *objdump=getenv("COAT_OBJDUMP"); objdump && objdump[0]=='1'){
+			// dumps object files to current working directory (directory can be changed by parameter)
+			J->getObjTransformLayer().setTransform(llvm::orc::DumpObjects());
+		}
 	}
 
 	template<typename FnPtr>
