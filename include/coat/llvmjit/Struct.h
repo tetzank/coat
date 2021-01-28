@@ -58,12 +58,9 @@ struct Struct<LLVMBuilders,T>
 		);
 		return *this;
 	}
+
 	//FIXME: takes any type
-	Struct &operator=(D2<llvm::Value*> val){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(val.line, 0, cc.debugScope));
-		store( val.operand );
-		return *this;
-	}
+	Struct &operator=(llvm::Value *val){ store( val ); return *this; }
 
 	// pre-increment
 	Struct &operator++(){

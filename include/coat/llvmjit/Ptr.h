@@ -56,11 +56,7 @@ struct Ptr<LLVMBuilders,T> {
 	Ptr(const Ptr &&other) : cc(other.cc), memreg(other.memreg) {}
 
 	//FIXME: takes any type
-	Ptr &operator=(D2<llvm::Value*> val){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(val.line, 0, cc.debugScope));
-		store( val.operand );
-		return *this;
-	}
+	Ptr &operator=(llvm::Value *val){ store( val ); return *this; }
 
 	Ptr &operator=(value_type *value){
 		llvm::Constant *int_val = llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), (uint64_t)value);

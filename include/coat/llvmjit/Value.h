@@ -114,11 +114,7 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 	}
 	Value &operator=(const Ref<F,Value> &other){ store( other.load() ); return *this; }
 	//FIXME: takes any type
-	Value &operator=(D2<llvm::Value*> val){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(val.line, 0, cc.debugScope));
-		store( val.operand );
-		return *this;
-	}
+	Value &operator=(llvm::Value *val){ store( val ); return *this; }
 
 	// special handling of bit tests, for convenience and performance
 	void bit_test(const Value &bit, Label<F> &label, bool jump_on_set=true) const {
