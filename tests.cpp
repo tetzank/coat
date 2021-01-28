@@ -84,6 +84,7 @@ void assemble_getStructElement(Fn &fn){
 
 template<typename T>
 struct wrapped_vector {
+	static constexpr std::array member_names{"begin", "end", "capend"};
 	using types = std::tuple<T*,T*,T*>;
 };
 

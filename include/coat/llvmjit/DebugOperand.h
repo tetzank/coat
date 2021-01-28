@@ -20,8 +20,8 @@ llvm::DICompositeType *getDebugStructTypeImpl(llvm::DIBuilder &dibuilder, llvm::
 		dibuilder.getOrCreateArray(
 			{
 				dibuilder.createMemberType(
-					//FIXME: name, line
-					scope, "member", scope->getFile(), 1,
+					//FIXME: line
+					scope, T::member_names[I], scope->getFile(), 1,
 					sizeof(std::tuple_element_t<I, typename T::types>) * 8,
 					alignof(std::tuple_element_t<I, typename T::types>) * 8,
 					offset_of_v<I, typename T::types> * 8,
