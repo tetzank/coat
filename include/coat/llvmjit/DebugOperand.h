@@ -7,32 +7,48 @@
 
 namespace coat {
 
-template<typename T> llvm::DIType *getDebugType(llvm::DIBuilder &);
 
-template<class Tuple, std::size_t... I>
-llvm::DICompositeType *getDebugStructTypeImpl(llvm::DIBuilder &dibuilder, std::index_sequence<I...>){
-	//return dibuilder.createStructType(
-	//	getDebugType<std::tuple_element_t<I, Tuple>>(dibuilder)...
-	//);
-	return nullptr; //TODO
+template<typename T> llvm::DIType *getDebugType(llvm::DIBuilder &, llvm::DIScope *);
+
+template<typename T, std::size_t... I>
+llvm::DICompositeType *getDebugStructTypeImpl(llvm::DIBuilder &dibuilder, llvm::DIScope *scope, std::index_sequence<I...>){
+	return dibuilder.createStructType(
+		//FIXME: name, line
+		scope /*scope*/, "Structure" /*name*/, scope->getFile() /*file*/, 1 /*line*/,
+		sizeof(T)*8 /*sizeInBits*/, alignof(T)*8 /*alignInBits*/,
+		llvm::DINode::FlagZero /*flags*/, nullptr /*derivedFrom*/,
+		dibuilder.getOrCreateArray(
+			{
+				dibuilder.createMemberType(
+					//FIXME: name, line
+					scope, "member", scope->getFile(), 1,
+					sizeof(std::tuple_element_t<I, typename T::types>) * 8,
+					alignof(std::tuple_element_t<I, typename T::types>) * 8,
+					offset_of_v<I, typename T::types> * 8,
+					llvm::DINode::FlagZero /*flags*/,
+					getDebugType<std::tuple_element_t<I, typename T::types>>(dibuilder, scope)
+				)
+				...
+			}
+		)
+	);
 }
 template<typename T>
-llvm::DICompositeType *getDebugStructType(llvm::DIBuilder &dibuilder){
+llvm::DICompositeType *getDebugStructType(llvm::DIBuilder &dibuilder, llvm::DIScope *scope){
 	constexpr size_t N = std::tuple_size_v<typename T::types>;
 	// N-1 as macros add trailing void to types tuple
-	return getDebugStructTypeImpl<typename T::types>(dibuilder, std::make_index_sequence<N-1>{});
+	return getDebugStructTypeImpl<T>(dibuilder, scope, std::make_index_sequence<N-1>{});
 }
 
 template<typename T>
-llvm::DIType *getDebugType(llvm::DIBuilder &dibuilder){
+llvm::DIType *getDebugType(llvm::DIBuilder &dibuilder, llvm::DIScope *scope){
 	if constexpr(std::is_pointer_v<T>){
 		using base_type = std::remove_cv_t<std::remove_pointer_t<T>>;
 		if constexpr(std::is_integral_v<base_type>){
-			return dibuilder.createPointerType(getDebugType<base_type>(dibuilder), 64);
+			return dibuilder.createPointerType(getDebugType<base_type>(dibuilder, scope), 64);
 		}else{
-			//TODO: support for pointer to struct
-			static_assert(should_not_be_reached<base_type>, "type not supported");
-			//return llvm::PointerType::get(getLLVMStructType<base_type>(ctx), 0);
+			// pointer to struct
+			return dibuilder.createPointerType(getDebugStructType<base_type>(dibuilder, scope), 64);
 		}
 	}else if constexpr(std::is_array_v<T>){
 		static_assert(should_not_be_reached<T>, "type not supported"); // FIXME
@@ -41,7 +57,7 @@ llvm::DIType *getDebugType(llvm::DIBuilder &dibuilder){
 		//return dibuilder.createArrayType(
 		//	std::extent_v<T>,
 		//	alignof(std::remove_extent_t<T>) * CHAR_BIT,
-		//	getDebugType<std::remove_extent_t<T>>(dibuilder),
+		//	getDebugType<std::remove_extent_t<T>>(dibuilder, scope),
 		//	???
 		//);
 	}else{
@@ -66,8 +82,7 @@ llvm::DIType *getDebugType(llvm::DIBuilder &dibuilder){
 			return dibuilder.createBasicType("unsigned long", 64, llvm::dwarf::DW_ATE_unsigned);
 		}else{
 			//HACK: assumes that this is a structure
-			//return getLLVMStructType<T>(ctx); //FIXME: support structures too
-			static_assert(should_not_be_reached<T>, "type not supported");
+			return getDebugStructType<T>(dibuilder, scope);
 		}
 	}
 	//return nullptr;

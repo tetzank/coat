@@ -3,36 +3,12 @@
 
 #include <asmjit/asmjit.h>
 
+#include "../constexpr_helper.h"
 #include "coat/Function.h"
 #include "Ref.h"
 
 
 namespace coat {
-
-// reimplementation of offsetof() in constexpr
-
-constexpr size_t roundup(size_t num, size_t multiple){
-	const size_t mod = num % multiple;
-	return (mod==0)? num: num + multiple - mod;
-}
-
-template<size_t I, typename Tuple>
-struct offset_of {
-	static constexpr size_t value = roundup(
-		offset_of<I-1, Tuple>::value + sizeof(std::tuple_element_t<I-1, Tuple>),
-		alignof(std::tuple_element_t<I, Tuple>)
-	);
-};
-
-template<typename Tuple>
-struct offset_of<0, Tuple> {
-	static constexpr size_t value = 0;
-};
-
-template<size_t I, typename Tuple>
-constexpr size_t offset_of_v = offset_of<I, Tuple>::value;
-
-// end of reimplementation of offsetof()
 
 
 template<typename T>

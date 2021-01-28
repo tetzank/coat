@@ -36,9 +36,9 @@ struct Ptr<LLVMBuilders,T> {
 		//TODO: file?
 		if(isParameter){
 			//TODO: param number
-			di_var = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg), true); //TODO: why alwaysPreserve=true?
+			di_var = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope), true); //TODO: why alwaysPreserve=true?
 		}else{
-			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg));
+			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope));
 		}
 		cc.dbg.insertDeclare(memreg, di_var, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock());
 	}

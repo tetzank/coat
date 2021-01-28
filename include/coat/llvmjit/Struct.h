@@ -23,12 +23,22 @@ struct Struct<LLVMBuilders,T>
 	void store(llvm::Value *v) { cc.ir.CreateStore(v, memreg); }
 	llvm::Type *type() const { return ((llvm::PointerType*)memreg->getType())->getElementType(); }
 
-	Struct(F &cc, const char *name="") : cc(cc) {
+	Struct(F &cc, const char *name="", bool isParameter=false, const char *file=__builtin_FILE(), int line=__builtin_LINE()) : cc(cc) {
 		// create struct type in LLVM IR from T::types tuple
-		llvm::StructType *struct_type = getLLVMStructType<T>(cc.ir.getContext());
-		llvm::Type *struct_ptr_type = llvm::PointerType::get(struct_type, 0);
+		llvm::StructType *type = getLLVMStructType<struct_type>(cc.ir.getContext());
+		llvm::Type *ptr_type = llvm::PointerType::get(type, 0);
 		// allocate space on stack to store pointer to struct
-		memreg = allocateStackVariable(cc.ir, struct_ptr_type, name);
+		memreg = allocateStackVariable(cc.ir, ptr_type, name);
+		// debug information
+		llvm::DILocalVariable *di_var;
+		//TODO: file?
+		if(isParameter){
+			//TODO: param number
+			di_var = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<struct_type*>(cc.dbg, cc.debugScope), true); //TODO: why alwaysPreserve=true?
+		}else{
+			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<struct_type*>(cc.dbg, cc.debugScope));
+		}
+		cc.dbg.insertDeclare(memreg, di_var, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock());
 	}
 	Struct(F &cc, T *val, const char *name="") : Struct(cc, name) {
 		*this = val;
@@ -49,7 +59,11 @@ struct Struct<LLVMBuilders,T>
 		return *this;
 	}
 	//FIXME: takes any type
-	Struct &operator=(llvm::Value *val){ store( val ); return *this; }
+	Struct &operator=(D2<llvm::Value*> val){
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(val.line, 0, cc.debugScope));
+		store( val.operand );
+		return *this;
+	}
 
 	// pre-increment
 	Struct &operator++(){

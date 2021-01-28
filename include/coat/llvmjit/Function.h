@@ -99,8 +99,8 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		// function type in debug info
 		llvm::DISubroutineType *dbg_func_type = cc.dbg.createSubroutineType(
 			cc.dbg.getOrCreateTypeArray({
-				getDebugType<std::remove_cv_t<R>>(cc.dbg),
-				getDebugType<std::remove_cv_t<Args>>(cc.dbg)...
+				getDebugType<std::remove_cv_t<R>>(cc.dbg, difile),
+				getDebugType<std::remove_cv_t<Args>>(cc.dbg, difile)...
 			})
 		);
 		// debug definition of function
@@ -224,6 +224,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	operator       LLVMBuilders&()       { return cc; }
 
 	void optimize(int optLevel){
+		// finalize debug information
+		cc.dbg.finalize();
+
 		//TODO: use TransformLayer instead
 		llvm::PassManagerBuilder pm_builder;
 		pm_builder.OptLevel = optLevel;
@@ -253,6 +256,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	// print IR to file
 	void printIR(const char *fname){
+		// finalize debug information
+		cc.dbg.finalize();
+
 		std::string str;
 		llvm::raw_string_ostream os(str);
 		M->print(os, nullptr);
@@ -278,6 +284,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 #endif
 
 	bool verify(){
+		// finalize debug information
+		cc.dbg.finalize();
+
 		std::string str;
 		llvm::raw_string_ostream os(str);
 		bool failed = llvm::verifyFunction(*func, &os);
