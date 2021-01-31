@@ -44,8 +44,15 @@ struct LLVMBuilders {
 	llvm::IRBuilder<> ir;
 	llvm::DIBuilder dbg;
 	llvm::DIScope *debugScope;
+	bool isDebugFinalized = false;
 
 	LLVMBuilders(llvm::LLVMContext &ctx, llvm::Module &M) : ir(ctx), dbg(M) {}
+	void debugFinalize(){
+		if(!isDebugFinalized){
+			dbg.finalize();
+			isDebugFinalized = true;
+		}
+	}
 };
 
 template<typename R, typename ...Args>
@@ -189,7 +196,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	func_type finalize(){
 		// finalize debug information
-		cc.dbg.finalize();
+		cc.debugFinalize();
 
 		// iterate over all functions in the module
 		for(auto &f : M->functions()){
@@ -227,7 +234,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	void optimize(int optLevel){
 		// finalize debug information
-		cc.dbg.finalize();
+		cc.debugFinalize();
 
 		//TODO: use TransformLayer instead
 		llvm::PassManagerBuilder pm_builder;
@@ -259,7 +266,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	// print IR to file
 	void printIR(const char *fname){
 		// finalize debug information
-		cc.dbg.finalize();
+		cc.debugFinalize();
 
 		std::string str;
 		llvm::raw_string_ostream os(str);
@@ -287,7 +294,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 	bool verify(){
 		// finalize debug information
-		cc.dbg.finalize();
+		cc.debugFinalize();
 
 		std::string str;
 		llvm::raw_string_ostream os(str);
