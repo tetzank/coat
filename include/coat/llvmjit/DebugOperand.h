@@ -8,6 +8,8 @@
 namespace coat {
 
 
+#ifdef LLVMJIT_DEBUG
+
 template<typename T> llvm::DIType *getDebugType(llvm::DIBuilder &, llvm::DIScope *);
 
 template<typename T, std::size_t... I>
@@ -103,7 +105,15 @@ struct DebugOperand2 {
 };
 
 
-template<typename T> using D2 = DebugOperand2<T>;
+	template<typename T> using D2 = DebugOperand2<T>;
+#	define DL2 cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(other.line, 0, cc.debugScope));
+#	define OP2 other.operand
+#else
+	// no debugging support
+#   define DL2
+#	define OP2 other
+	template<typename T> using D2 = T;
+#endif
 
 
 } // namespace

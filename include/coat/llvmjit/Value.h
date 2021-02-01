@@ -23,7 +23,13 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 	static_assert(std::is_signed_v<T> || std::is_unsigned_v<T>,
 		"only plain signed or unsigned arithmetic types supported");
 
-	Value(F &cc, const char *name="", bool isParameter=false, const char *file=__builtin_FILE(), int line=__builtin_LINE()) : ValueBase(cc) {
+	Value(F &cc, const char *name=""
+#ifdef LLVMJIT_DEBUG
+			,bool isParameter=false,
+			const char *file=__builtin_FILE(),
+			int line=__builtin_LINE()
+#endif
+	) : ValueBase(cc) {
 		// llvm IR has no types for unsigned/signed integers
 		switch(sizeof(T)){
 			case 1: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt8Ty (cc.ir.getContext()), name); break;
@@ -31,6 +37,7 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 			case 4: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt32Ty(cc.ir.getContext()), name); break;
 			case 8: memreg = allocateStackVariable(cc.ir, llvm::Type::getInt64Ty(cc.ir.getContext()), name); break;
 		}
+#ifdef LLVMJIT_DEBUG
 		// debug information
 		llvm::DILocalVariable *di_var;
 		//TODO: file?
@@ -41,10 +48,18 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type>(cc.dbg, cc.debugScope));
 		}
 		cc.dbg.insertDeclare(memreg, di_var, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock());
+#endif
 	}
+
+#ifdef LLVMJIT_DEBUG
 	Value(F &cc, T val, const char *name="", const char *file=__builtin_FILE(), int line=__builtin_LINE()) : Value(cc, name, false, file, line) {
 		*this = D2<T>{val, file, line};
 	}
+#else
+	Value(F &cc, T val, const char *name="") : Value(cc, name) {
+		*this = val;
+	}
+#endif
 	// real copy requires new stack memory and copy of content
 	Value(const Value &other) : Value(other.cc) {
 		*this = other;
@@ -107,9 +122,9 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 
 	// assignment
 	Value &operator=(const Value &other){ store( other.load() ); return *this; }
-	Value &operator=(D2<value_type> value){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(value.line, 0, cc.debugScope));
-		store( llvm::ConstantInt::get(type(), value.operand) );
+	Value &operator=(D2<value_type> other){
+		DL2;
+		store( llvm::ConstantInt::get(type(), OP2) );
 		return *this;
 	}
 	Value &operator=(const Ref<F,Value> &other){ store( other.load() ); return *this; }
@@ -235,14 +250,14 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 	}
 
 	Value &operator+=(const D2<Value> &other){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(other.line, 0, cc.debugScope));
-		store( cc.ir.CreateAdd(load(), other.operand.load()) );
+		DL2;
+		store( cc.ir.CreateAdd(load(), OP2.load()) );
 		return *this;
 	}
 	Value &operator+=(int constant){ store( cc.ir.CreateAdd(load(), llvm::ConstantInt::get(type(),constant)) ); return *this; }
 	Value &operator+=(const D2<Ref<F,Value>> &other){
-		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(other.line, 0, cc.debugScope));
-		store( cc.ir.CreateAdd(load(), other.operand.load()) );
+		DL2;
+		store( cc.ir.CreateAdd(load(), OP2.load()) );
 		return *this;
 	}
 

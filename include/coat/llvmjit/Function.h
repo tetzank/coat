@@ -42,16 +42,23 @@ struct getFunctionType<R(*)(Args...)>{
 
 struct LLVMBuilders {
 	llvm::IRBuilder<> ir;
+#ifdef LLVMJIT_DEBUG
 	llvm::DIBuilder dbg;
 	llvm::DIScope *debugScope;
 	bool isDebugFinalized = false;
 
 	LLVMBuilders(llvm::LLVMContext &ctx, llvm::Module &M) : ir(ctx), dbg(M) {}
+#else
+	LLVMBuilders(llvm::LLVMContext &ctx, llvm::Module &) : ir(ctx) {}
+#endif
+
 	void debugFinalize(){
+#ifdef LLVMJIT_DEBUG
 		if(!isDebugFinalized){
 			dbg.finalize();
 			isDebugFinalized = true;
 		}
+#endif
 	}
 };
 
@@ -83,7 +90,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		, cc(*context, *M)
 		, name(name)
 	{
-#ifdef PROFILING_SOURCE
+#ifdef LLVMJIT_DEBUG
 		// source file where function was created
 		// a bit pointless as the code generating a function may be spread across multiple source files
 		llvm::DIFile *difile = cc.dbg.createFile(
@@ -102,7 +109,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		// LLVM IR function definition
 		func = createFunction(jit_func_type, name); // function name
 
-#ifdef PROFILING_SOURCE
+#ifdef LLVMJIT_DEBUG
 		// function type in debug info
 		llvm::DISubroutineType *dbg_func_type = cc.dbg.createSubroutineType(
 			cc.dbg.getOrCreateTypeArray({
@@ -131,7 +138,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 
 		cc.ir.SetInsertPoint(bb_start);
 
-#ifdef PROFILING_SOURCE
+#ifdef LLVMJIT_DEBUG
 		// unset location for prologue
 		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc());
 #endif
@@ -158,6 +165,8 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	}
 
 
+//FIXME: too much duplicated code
+#ifdef LLVMJIT_DEBUG
 	template<typename ...Names>
 	std::tuple<wrapper_type<F,Args>...> getArguments_impl(Names... names, const char *file, int line) {
 		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
@@ -182,6 +191,26 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	std::tuple<wrapper_type<F,Args>...> getArguments(D2<const char*> first, Names... rest) {
 		return getArguments_impl<const char*, Names...>(first.operand, rest..., first.file, first.line);
 	}
+#else
+	template<typename ...Names>
+	std::tuple<wrapper_type<F,Args>...> getArguments(Names... names) {
+		static_assert(sizeof...(Args) == sizeof...(Names), "not enough or too many names specified");
+		// create all parameter wrapper objects in a tuple
+		std::tuple<wrapper_type<F,Args>...> ret { wrapper_type<F,Args>(cc, names)... };
+
+		// get argument value and put it in wrapper object
+		std::apply(
+			[&](auto &&...args){
+				llvm::Function *fn = cc.ir.GetInsertBlock()->getParent();
+				llvm::Function::arg_iterator arguments = fn->arg_begin();
+				// (tuple_at_0 = (llvm::Value*)args++), (tuple_at_1 = (llvm::Value*)args++), ... ;
+				((args = (llvm::Value*)arguments++), ...);
+			},
+			ret
+		);
+		return ret;
+	}
+#endif
 
 	//HACK: trying factory
 	template<typename T>
