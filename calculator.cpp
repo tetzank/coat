@@ -16,7 +16,7 @@ struct Table {
 	x(size_t, nrows) \
 	x(uint64_t*, data)
 
-DECLARE(MEMBERS)
+COAT_DECLARE(MEMBERS)
 #undef MEMBERS
 
 	Table(size_t ncols, size_t nrows) : ncols(ncols), nrows(nrows) {

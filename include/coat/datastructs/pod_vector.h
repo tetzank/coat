@@ -18,7 +18,7 @@ class pod_vector {
 	x(T*, finish) \
 	x(T*, capend)
 
-DECLARE_PRIVATE(MEMBERS)
+COAT_DECLARE_PRIVATE(MEMBERS)
 #undef MEMBERS
 
 public:

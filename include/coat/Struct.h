@@ -5,37 +5,37 @@
 
 namespace coat {
 
-#define STRUCT_MEMBER(ty, id) ty id;
-#define ENUM_MEMBER(ty, id) member_##id,
-#define STRING_MEMBER(ty, id) #id,
-#define TYPE_MEMBER(ty, id) ty,
+#define COAT_STRUCT_MEMBER(ty, id) ty id;
+#define COAT_ENUM_MEMBER(ty, id) member_##id,
+#define COAT_STRING_MEMBER(ty, id) #id,
+#define COAT_TYPE_MEMBER(ty, id) ty,
 
 // declares (public) members, enum and tuple containing types
-#define DECLARE(members)                       \
-	members(STRUCT_MEMBER)                     \
+#define COAT_DECLARE(members)                  \
+	members(COAT_STRUCT_MEMBER)                \
 	enum member_ids : int {                    \
-		members(ENUM_MEMBER)                   \
+		members(COAT_ENUM_MEMBER)              \
 	};                                         \
 	static constexpr std::array member_names { \
-		members(STRING_MEMBER)                 \
+		members(COAT_STRING_MEMBER)            \
 	};                                         \
 	using types = std::tuple<                  \
-		members(TYPE_MEMBER)                   \
+		members(COAT_TYPE_MEMBER)              \
 	void>;
 
 // declares private members and public enum and types
-#define DECLARE_PRIVATE(members)               \
+#define COAT_DECLARE_PRIVATE(members)          \
 private:                                       \
-	members(STRUCT_MEMBER)                     \
+	members(COAT_STRUCT_MEMBER)                \
 public:                                        \
 	enum member_ids : int {                    \
-		members(ENUM_MEMBER)                   \
+		members(COAT_ENUM_MEMBER)              \
 	};                                         \
 	static constexpr std::array member_names { \
-		members(STRING_MEMBER)                 \
+		members(COAT_STRING_MEMBER)            \
 	};                                         \
 	using types = std::tuple<                  \
-		members(TYPE_MEMBER)                   \
+		members(COAT_TYPE_MEMBER)              \
 	void>;
 
 

@@ -67,7 +67,7 @@ struct triple {
 	x(uint16_t, second) \
 	x(uint64_t, third)
 
-DECLARE(MEMBERS)
+COAT_DECLARE(MEMBERS)
 #undef MEMBERS
 };
 

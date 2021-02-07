@@ -230,7 +230,7 @@ class my_vector {
     x(int*, finish)   \
     x(int*, capacity)
 
-DECLARE_PRIVATE(MEMBERS)
+COAT_DECLARE_PRIVATE(MEMBERS)
 #undef MEMBERS
 
 public:
