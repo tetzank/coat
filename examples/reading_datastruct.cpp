@@ -7,6 +7,8 @@
 
 
 class my_vector {
+// annotate type with name of type for better debug info
+COAT_NAME("my_vector");
 // declare all member variables: int *start, *finish, *capacity;
 // macro adds metadata to calculate
 // data layout at compile-time
@@ -44,13 +46,13 @@ int main(){
 	// initialize backend, AsmJit in this case
 	coat::runtimeasmjit asmrt;
 	// context object representing the generated function
-	auto fn = asmrt.createFunction<func_t>();
+	auto fn = asmrt.createFunction<func_t>("reading");
 #elif defined(ENABLE_LLVMJIT)
 	// initialize LLVM backend
 	coat::runtimellvmjit::initTarget();
 	coat::runtimellvmjit llvmrt;
 	// context object representing the generated function
-	auto fn = llvmrt.createFunction<func_t>();
+	auto fn = llvmrt.createFunction<func_t>("reading");
 #else
 #	error "Neither AsmJit nor LLVM enabled"
 #endif
@@ -61,9 +63,9 @@ int main(){
 		auto [vec] = fn.getArguments("vec");
 
 		// read member "start"
-		auto start = vec.get_value<my_vector::member_start>();
+		auto start = vec.get_value<my_vector::member_start>("start");
 		// read member "finish"
-		auto finish = vec.get_value<my_vector::member_finish>();
+		auto finish = vec.get_value<my_vector::member_finish>("finish");
 		// calculate number of elements between both pointers
 		auto size = finish - start;
 

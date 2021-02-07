@@ -5,6 +5,8 @@
 
 namespace coat {
 
+#define COAT_NAME(str) public: static constexpr const char *name = str
+
 #define COAT_STRUCT_MEMBER(ty, id) ty id;
 #define COAT_ENUM_MEMBER(ty, id) member_##id,
 #define COAT_STRING_MEMBER(ty, id) #id,

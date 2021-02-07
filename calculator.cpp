@@ -11,6 +11,7 @@
 
 
 struct Table {
+	COAT_NAME("Table");
 #define MEMBERS(x) \
 	x(size_t, ncols) \
 	x(size_t, nrows) \

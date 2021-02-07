@@ -13,6 +13,7 @@ class pod_vector {
 	//FIXME: way too strict, every relocatable object works
 	static_assert(std::is_pod_v<T>, "pod_vector only supports pod types");
 
+	COAT_NAME("pod_vector");
 #define MEMBERS(x) \
 	x(T*, start) \
 	x(T*, finish) \

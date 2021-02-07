@@ -14,9 +14,15 @@ template<typename T> llvm::DIType *getDebugType(llvm::DIBuilder &, llvm::DIScope
 
 template<typename T, std::size_t... I>
 llvm::DICompositeType *getDebugStructTypeImpl(llvm::DIBuilder &dibuilder, llvm::DIScope *scope, std::index_sequence<I...>){
+	const char *name;
+	if constexpr(requires {T::name;}){
+		name = T::name;
+	}else{
+		name = "Structure";
+	}
 	return dibuilder.createStructType(
-		//FIXME: name, line
-		scope /*scope*/, "Structure" /*name*/, scope->getFile() /*file*/, 1 /*line*/,
+		//FIXME: line
+		scope, name, scope->getFile(), 1 /*line*/,
 		sizeof(T)*8 /*sizeInBits*/, alignof(T)*8 /*alignInBits*/,
 		llvm::DINode::FlagZero /*flags*/, nullptr /*derivedFrom*/,
 		dibuilder.getOrCreateArray(

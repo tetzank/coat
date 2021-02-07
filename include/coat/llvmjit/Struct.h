@@ -93,9 +93,20 @@ struct Struct<LLVMBuilders,T>
 	}
 
 	template<int I>
-	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value() const {
+	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value(
+			const char *name=""
+#ifdef LLVMJIT_DEBUG
+			,const char *file=__builtin_FILE(),
+			int line=__builtin_LINE()
+#endif
+	) const {
 		using type = std::tuple_element_t<I, typename T::types>;
-		wrapper_type<F,type> ret(cc);
+#ifdef LLVMJIT_DEBUG
+		wrapper_type<F,type> ret(cc, name, false, file, line);
+		cc.ir.SetCurrentDebugLocation(llvm::DebugLoc::get(line, 0, cc.debugScope));
+#else
+		wrapper_type<F,type> ret(cc, name);
+#endif
 		llvm::Value *member_addr = cc.ir.CreateStructGEP(load(), I);
 		if constexpr(std::is_arithmetic_v<std::remove_pointer_t<type>>){
 			llvm::Value *member = cc.ir.CreateLoad(member_addr, "memberload");
