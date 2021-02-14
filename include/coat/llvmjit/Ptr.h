@@ -18,6 +18,11 @@ struct Ptr<LLVMBuilders,T> {
 
 	LLVMBuilders &cc;
 	llvm::Value *memreg;
+#ifdef LLVMJIT_DEBUG
+	//FIXME: try to minimize
+	llvm::DILocalVariable *dbgvar;
+	llvm::IntrinsicInst *dbgdecl;
+#endif
 
 	llvm::Value *load() const { return cc.ir.CreateLoad(memreg, "load"); }
 	void store(llvm::Value *v) { cc.ir.CreateStore(v, memreg); }
@@ -39,15 +44,14 @@ struct Ptr<LLVMBuilders,T> {
 		}
 #ifdef LLVMJIT_DEBUG
 		// debug information
-		llvm::DILocalVariable *di_var;
 		//TODO: file?
 		if(isParameter){
 			//TODO: param number
-			di_var = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope), true); //TODO: why alwaysPreserve=true?
+			dbgvar = cc.dbg.createParameterVariable(cc.debugScope, name, 0, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope), true); //TODO: why alwaysPreserve=true?
 		}else{
-			di_var = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope));
+			dbgvar = cc.dbg.createAutoVariable(cc.debugScope, name, cc.debugScope->getFile(), line, getDebugType<value_type*>(cc.dbg, cc.debugScope));
 		}
-		cc.dbg.insertDeclare(memreg, di_var, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock());
+		dbgdecl = static_cast<llvm::IntrinsicInst*>(cc.dbg.insertDeclare(memreg, dbgvar, cc.dbg.createExpression(), llvm::DebugLoc::get(line, 0, cc.debugScope), cc.ir.GetInsertBlock()));
 #endif
 	}
 	Ptr(F &cc, value_type *val, const char *name="") : Ptr(cc, name) {
@@ -73,6 +77,19 @@ struct Ptr<LLVMBuilders,T> {
 	}
 	Ptr &operator=(const Ptr &other){ store( other.load() ); return *this; }
 
+	void setName(const char *name){
+		memreg->setName(name);
+#ifdef LLVMJIT_DEBUG
+		llvm::DILocalVariable *di_var;
+		if(dbgvar->isParameter()){
+			di_var = cc.dbg.createParameterVariable(dbgvar->getScope(), name, dbgvar->getArg(), dbgvar->getFile(), dbgvar->getLine(), dbgvar->getType(), true); //TODO: why alwaysPreserve=true?
+		}else{
+			di_var = cc.dbg.createAutoVariable(dbgvar->getScope(), name, dbgvar->getFile(), dbgvar->getLine(), dbgvar->getType());
+		}
+		dbgdecl->setArgOperand(1, llvm::MetadataAsValue::get(cc.ir.getContext(), di_var)); //FIXME: memleak? what happens with old operand?
+#endif
+	}
+
 	// dereference
 	mem_type operator*(){
 		return { cc, cc.ir.CreateGEP(load(), llvm::ConstantInt::get(llvm::Type::getInt64Ty(cc.ir.getContext()), 0)) };
@@ -88,7 +105,7 @@ struct Ptr<LLVMBuilders,T> {
 	
 	Ptr operator+(const D2<value_base_type> &other) const {
 #ifdef LLVMJIT_DEBUG
-		Ptr res(cc, "", false, other.file, other.line);
+		Ptr res(cc, "temp", false, other.file, other.line);
 #else
 		Ptr res(cc);
 #endif
@@ -98,7 +115,7 @@ struct Ptr<LLVMBuilders,T> {
 	}
 	Ptr operator+(D2<size_t> other) const {
 #ifdef LLVMJIT_DEBUG
-		Ptr res(cc, "", false, other.file, other.line);
+		Ptr res(cc, "temp", false, other.file, other.line);
 #else
 		Ptr res(cc);
 #endif

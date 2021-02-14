@@ -59,6 +59,10 @@ struct Ptr<::asmjit::x86::Compiler,T>{
 		return *this;
 	}
 
+	void setName(const char * /*name*/){
+		//TODO
+	}
+
 	operator const ::asmjit::x86::Gp&() const { return reg; }
 	operator       ::asmjit::x86::Gp&()       { return reg; }
 

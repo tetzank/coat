@@ -29,6 +29,7 @@ int main(){
 #	error "Neither AsmJit nor LLVM enabled"
 #endif
 
+#define _(var) var.setName(#var)
 	// start of the EDSL code describing the code of the generated function
 	{
 		// get function arguments as "meta-variables"
@@ -37,7 +38,7 @@ int main(){
 		// "meta-variable" for sum
 		coat::Value sum(fn, uint64_t(0), "sum");
 		// "meta-variable" for past-the-end pointer
-		auto end = data + size;
+		auto end = data + size; _(end);
 		// loop over all elements
 		coat::for_each(fn, data, end, [&](auto &element){
 			// add each element to the sum
