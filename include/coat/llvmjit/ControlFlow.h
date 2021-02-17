@@ -142,7 +142,11 @@ void do_while(LLVMBuilders &cc, Fn &&body, Condition<LLVMBuilders> cond){
 }
 
 template<class Ptr, typename Body>
-void for_each(LLVMBuilders &cc, Ptr &begin, const Ptr &end, Body &&body, const char *file=__builtin_FILE(), int line=__builtin_LINE()){
+void for_each(LLVMBuilders &cc, Ptr &begin, const Ptr &end, Body &&body
+#ifdef LLVMJIT_DEBUG
+	, const char * /*file*/=__builtin_FILE(), int line=__builtin_LINE()
+#endif
+){
 	llvm::BasicBlock *bb_current = cc.ir.GetInsertBlock();
 	llvm::Function *fn = bb_current->getParent();
 	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(cc.ir.getContext(), "foreach", fn);

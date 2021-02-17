@@ -80,9 +80,10 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 	std::vector<llvm::Function*> functions;
 
 	Function(
-		runtimellvmjit &jit, const char *name="func",
-		// for debug info
-		const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+		runtimellvmjit &jit, const char *name="func"
+#ifdef LLVMJIT_DEBUG
+		,const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+#endif
 	)
 		: jit(jit)
 		, context(std::make_unique<llvm::LLVMContext>())
@@ -97,7 +98,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 			srcfile, "." //TODO: how to get directory?
 		);
 		//TODO: change bool when optimization is enabled
-		llvm::DICompileUnit *dicu = cc.dbg.createCompileUnit(llvm::dwarf::DW_LANG_C, difile, "COAT", false, "", 0);
+		/*llvm::DICompileUnit *dicu = */cc.dbg.createCompileUnit(llvm::dwarf::DW_LANG_C, difile, "COAT", false, "", 0);
 #endif
 
 		// LLVM IR function type
@@ -355,7 +356,7 @@ struct InternalFunction<runtimellvmjit,R(*)(Args...)>{
 	llvm::Function *func;
 
 	//TODO: make private, Function::addFunction should be used
-	InternalFunction(runtimellvmjit &jit, LLVMBuilders &cc, const char *name, llvm::Function *func)
+	InternalFunction(runtimellvmjit & /*jit*/, LLVMBuilders &cc, const char *name, llvm::Function *func)
 		: cc(cc), name(name), func(func) {}
 	InternalFunction(const InternalFunction &other)
 		: cc(other.cc), name(other.name), func(other.func) {}

@@ -11,7 +11,10 @@
 template<typename T, size_t initial_size=1024>
 class pod_vector {
 	//FIXME: way too strict, every relocatable object works
-	static_assert(std::is_pod_v<T>, "pod_vector only supports pod types");
+	// is_pod got deprecated in C++20
+	//static_assert(std::is_pod_v<T>, "pod_vector only supports pod types");
+	static_assert(std::is_standard_layout_v<T> && std::is_trivial_v<T>,
+		"pod_vector only supports pod types");
 
 	COAT_NAME("pod_vector");
 #define MEMBERS(x) \

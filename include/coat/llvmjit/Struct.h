@@ -26,7 +26,7 @@ struct Struct<LLVMBuilders,T>
 	Struct(F &cc, const char *name=""
 #ifdef LLVMJIT_DEBUG
 			,bool isParameter=false,
-			const char *file=__builtin_FILE(),
+			const char * /*file*/=__builtin_FILE(),
 			int line=__builtin_LINE()
 #endif
 	) : cc(cc) {

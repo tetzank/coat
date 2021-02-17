@@ -26,7 +26,7 @@ struct Value<LLVMBuilders,T> final : public ValueBase<LLVMBuilders> {
 	Value(F &cc, const char *name=""
 #ifdef LLVMJIT_DEBUG
 			,bool isParameter=false,
-			const char *file=__builtin_FILE(),
+			const char * /*file*/=__builtin_FILE(),
 			int line=__builtin_LINE()
 #endif
 	) : ValueBase(cc) {

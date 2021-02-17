@@ -132,11 +132,16 @@ public:
 
 	template<typename FnPtr>
 	Function<runtimellvmjit,FnPtr> createFunction(
-		const char *funcName="func",
-		// for debug info
-		const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+		const char *funcName="func"
+#ifdef LLVMJIT_DEBUG
+		,const char *srcfile=__builtin_FILE(), int srcline=__builtin_LINE()
+#endif
 	){
+#ifdef LLVMJIT_DEBUG
 		return Function<runtimellvmjit,FnPtr>(*this, funcName, srcfile, srcline);
+#else
+		return Function<runtimellvmjit,FnPtr>(*this, funcName);
+#endif
 	}
 };
 
