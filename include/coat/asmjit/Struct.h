@@ -78,12 +78,13 @@ struct Struct<::asmjit::x86::Compiler,T>
 
 	template<int I>
 	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value(
+		const char *name=""
 #ifdef PROFILING_SOURCE
-		const char *file=__builtin_FILE(), int line=__builtin_LINE()
+		,const char *file=__builtin_FILE(), int line=__builtin_LINE()
 #endif
 	) const {
 		using type = std::tuple_element_t<I, typename T::types>;
-		wrapper_type<F,type> ret(cc);
+		wrapper_type<F,type> ret(cc, name);
 		if constexpr(std::is_array_v<type>){
 			// array decay to pointer, just add offset to struct pointer
 			//TODO: could just use struct pointer with fixed offset, no need for new register, similar to nested struct

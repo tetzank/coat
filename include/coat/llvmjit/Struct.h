@@ -94,10 +94,9 @@ struct Struct<LLVMBuilders,T>
 
 	template<int I>
 	wrapper_type<F,std::tuple_element_t<I, typename T::types>> get_value(
-			const char *name=""
+		const char *name=""
 #ifdef LLVMJIT_DEBUG
-			,const char *file=__builtin_FILE(),
-			int line=__builtin_LINE()
+		,const char *file=__builtin_FILE(), int line=__builtin_LINE()
 #endif
 	) const {
 		using type = std::tuple_element_t<I, typename T::types>;

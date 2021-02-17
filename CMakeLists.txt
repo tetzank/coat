@@ -8,7 +8,7 @@ if(NOT DEFINED CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS) Debug Release RelWithdebInfo MinSizeRel.")
 endif()
 
-project(dangerousAssembly CXX)
+project(coat CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,7 +53,7 @@ if(ENABLE_LLVMJIT)
 		PATH_SUFFIXES include
 	)
 	find_library(LLVM_LIBRARIES
-		LLVM-7.1
+		LLVM
 		HINTS external/llvm/llvm/install ENV LLVM_ROOT
 		PATH_SUFFIXES lib build/lib
 	)
