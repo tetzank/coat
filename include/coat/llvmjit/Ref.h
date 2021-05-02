@@ -37,10 +37,10 @@ struct Ref<LLVMBuilders,T> {
 	// swap sides of operands and comparison, not needed for assembly, but avoids code duplication in wrapper
 	Condition<F> operator==(const T &other) const { return other==*this; }
 	Condition<F> operator!=(const T &other) const { return other!=*this; }
-	Condition<F> operator< (const T &other) const { return other>=*this; }
-	Condition<F> operator<=(const T &other) const { return other> *this; }
-	Condition<F> operator> (const T &other) const { return other<=*this; }
-	Condition<F> operator>=(const T &other) const { return other< *this; }
+	Condition<F> operator< (const T &other) const { return other> *this; }
+	Condition<F> operator<=(const T &other) const { return other>=*this; }
+	Condition<F> operator> (const T &other) const { return other< *this; }
+	Condition<F> operator>=(const T &other) const { return other<=*this; }
 	//TODO: possible without temporary: cmp m32 imm32, complicates Condition
 	Condition<F> operator==(int constant) const { T tmp(cc, "tmp"); tmp = *this; return tmp==constant; }
 	Condition<F> operator!=(int constant) const { T tmp(cc, "tmp"); tmp = *this; return tmp!=constant; }
