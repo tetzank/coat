@@ -15,6 +15,28 @@ This library tries to make JIT compilation as easy as possible.
 More details are explained in a [blog post](https://tetzank.github.io/posts/coat-edsl-for-codegen/).
 
 
+## Build Instructions
+
+Ensure submodules are fetched, and build with CMake:
+
+```
+git submodule init
+git submodule update
+mkdir build
+cd build
+cmake ..
+make -j4
+make test
+```
+
+The library is header-only. Small example programs are included to show how to use the library:
+
+```
+cd build
+./example_coat_llvmjit_calculator
+./example_coat_asmjit_calculator
+```
+
 ## Example
 
 The following code snippet is a full example program.
@@ -298,24 +320,6 @@ coat::Function<coat::runtimeasmjit,func_t> fn(asmrt);
 }
 // finalize code generation and get function pointer to generated code
 func_t foo = fn.finalize();
-```
-
-
-## Build Instructions
-
-The library is header-only. Small test programs are included to show how to use the library.
-
-Fetch JIT engines and build them (use `-j` for parallel compilation, LLVM can take a while...):
-```
-$ ./buildDependencies.sh -j8
-```
-
-Then, build with cmake:
-```
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
 ```
 
 

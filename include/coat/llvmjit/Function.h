@@ -239,7 +239,7 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 					llvm::Constant *c = llvm::cast<llvm::ConstantAsMetadata>(md->getOperand(0))->getValue();
 					uint64_t fnptr = llvm::cast<llvm::ConstantInt>(c)->getZExtValue();
 					// add function address as absolute symbol
-					cantFail(jit.J->define(
+					llvm::cantFail(jit.J->getMainJITDylib().define(
 						llvm::orc::absoluteSymbols({{
 							jit.J->mangleAndIntern(f.getName()),
 							llvm::JITEvaluatedSymbol::fromPointer((void*)fnptr)
@@ -250,9 +250,9 @@ struct Function<runtimellvmjit,R(*)(Args...)>{
 		}
 
 		llvm::orc::ThreadSafeModule tsm(std::move(M), std::move(context));
-		cantFail(jit.J->addIRModule(std::move(tsm)));
+        llvm::cantFail(jit.J->addIRModule(std::move(tsm)));
 		// Look up the JIT'd function
-		llvm::JITEvaluatedSymbol SumSym = cantFail(jit.J->lookup(name));
+		llvm::JITEvaluatedSymbol SumSym = llvm::cantFail(jit.J->lookup(name));
 		// get function ptr
 		return (func_type)SumSym.getAddress();
 	}

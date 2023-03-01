@@ -1,11 +1,7 @@
 [submodule "external/asmjit"]
-	path = external/asmjit
+	path = ThirdParty/asmjit
 	url = https://github.com/asmjit/asmjit
 	branch = master
-[submodule "external/llvm"]
-	path = external/llvm
-	url = https://github.com/llvm/llvm-project
-	branch = release/7.x
 [submodule "external/asmjit-utilities"]
-	path = external/asmjit-utilities
+	path = ThirdParty/asmjit-utilities
 	url = https://github.com/tetzank/asmjit-utilities
